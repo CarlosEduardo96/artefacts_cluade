@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mini Kids: juego para niños</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5FBF}a:hover{color:#163F80}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible{outline:5px solid #1F5FBF;outline-offset:4px}
+.card{transition:transform .15s ease}
+.card:hover{transform:translateY(-6px)}
+.card.ok{animation:pop .55s ease}
+.card.no{animation:shake .4s ease}
+.bounce{animation:bob 2.4s ease-in-out infinite}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1.04)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+</style>
+</helmet>
+<div style="width: 1024px; height: 768px; box-sizing: border-box; background: #EAF6FF; font-family: 'Fredoka', system-ui, sans-serif; color: #1B2A41; overflow: hidden; position: relative">
+
+<sc-if value="{{ isMenu }}" hint-placeholder-val="{{ true }}">
+<div style="height: 768px; box-sizing: border-box; padding: 56px 48px; display: flex; flex-direction: column; align-items: center; gap: 28px">
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+    <p style="margin: 0; font-size: 34px; font-weight: 600; color: #C2410C">¡Bienvenidos!</p>
+    <h1 style="margin: 0; font-size: 92px; font-weight: 700; color: #1F5FBF; letter-spacing: -1px">Mini Kids</h1>
+    <p style="margin: 0; font-size: 30px; font-weight: 500; color: #3A4A66">Juega y aprende con los animales y los números</p>
+  </div>
+  <div style="display: flex; gap: 20px; align-items: flex-end">
+    <sc-for list="{{ parade }}" as="p" hint-placeholder-count="5">
+      <div class="bounce" style="animation-delay: {{ p.delay }}">
+        <dc-import name="Animal" kind="{{ p.id }}" size="128" hint-size="128px,128px"></dc-import>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display: flex; gap: 28px; margin-top: 12px">
+    <button onClick="{{ startFind }}" style="width: 212px; height: 210px; border: none; border-radius: 40px; background: #FFCB47; box-shadow: 0 10px 0 #D9A21E; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #1B2A41; font-size: 28px; font-weight: 600">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#1B2A41" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+      ¿Dónde está?
+    </button>
+    <button onClick="{{ startSound }}" style="width: 212px; height: 210px; border: none; border-radius: 40px; background: #7CC6FF; box-shadow: 0 10px 0 #3F95D6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #1B2A41; font-size: 28px; font-weight: 600">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#1B2A41" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M16.5 8.5a5 5 0 0 1 0 7"></path><path d="M19 6a8.5 8.5 0 0 1 0 12"></path></svg>
+      ¿Quién hace?
+    </button>
+    <button onClick="{{ startHome }}" style="width: 212px; height: 210px; border: none; border-radius: 40px; background: #8FD694; box-shadow: 0 10px 0 #55A85C; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #1B2A41; font-size: 28px; font-weight: 600">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#1B2A41" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path></svg>
+      ¿Dónde vive?
+    </button>
+    <button onClick="{{ startMath }}" style="width: 212px; height: 210px; border: none; border-radius: 40px; background: #FFA8BF; box-shadow: 0 10px 0 #D9668A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #1B2A41; font-size: 28px; font-weight: 600">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#1B2A41" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M3 7h8"></path><path d="M13 7h8"></path><path d="M4 15l6 6M10 15l-6 6"></path><path d="M14 16h7M14 20h7"></path></svg>
+      Números
+    </button>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPlay }}" hint-placeholder-val="{{ false }}">
+<div style="height: 768px; box-sizing: border-box; padding: 28px 48px 36px; display: flex; flex-direction: column; align-items: center; gap: 22px">
+  <div style="width: 100%; display: flex; align-items: center; justify-content: space-between">
+    <button onClick="{{ goMenu }}" aria-label="Volver al menú" style="width: 68px; height: 68px; border: none; border-radius: 34px; background: #FFFFFF; box-shadow: 0 6px 0 rgba(27,42,65,.14); display: flex; align-items: center; justify-content: center">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1B2A41" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg>
+    </button>
+    <div style="display: flex; gap: 10px" role="img" aria-label="{{ starsLabel }}">
+      <sc-for list="{{ starsList }}" as="s" hint-placeholder-count="5">
+        <sc-if value="{{ s.filled }}" hint-placeholder-val="{{ false }}">
+          <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" fill="#FFCB47" stroke="#D9A21E" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+        </sc-if>
+        <sc-if value="{{ s.empty }}" hint-placeholder-val="{{ true }}">
+          <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" fill="#FFFFFF" stroke="#B9C6D8" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+        </sc-if>
+      </sc-for>
+    </div>
+    <button onClick="{{ repeat }}" aria-label="Escuchar otra vez" style="width: 68px; height: 68px; border: none; border-radius: 34px; background: #FFCB47; box-shadow: 0 6px 0 #D9A21E; display: flex; align-items: center; justify-content: center">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1B2A41" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M16.5 8.5a5 5 0 0 1 0 7"></path><path d="M19 6a8.5 8.5 0 0 1 0 12"></path></svg>
+    </button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 4px">
+    <p style="margin: 0; font-size: 22px; font-weight: 500; color: #4A5872">{{ roundLabel }}</p>
+    <h2 style="margin: 0; font-size: 52px; font-weight: 600; text-align: center">{{ promptText }}</h2>
+  </div>
+
+  <sc-if value="{{ isPickMode }}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; gap: 32px; margin-top: 8px">
+      <sc-for list="{{ options }}" as="opt" hint-placeholder-count="3">
+        <button class="card {{ opt.cls }}" onClick="{{ opt.pick }}" aria-label="{{ opt.display }}" style="width: 270px; height: 320px; border: 6px solid {{ opt.border }}; border-radius: 40px; background: {{ opt.bg }}; opacity: {{ opt.op }}; box-shadow: 0 10px 0 rgba(27,42,65,.12); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 0">
+          <dc-import name="Animal" kind="{{ opt.id }}" size="210" hint-size="210px,210px"></dc-import>
+          <span style="font-size: 32px; font-weight: 600; color: #1C6B3C; height: 40px">{{ opt.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isHomeMode }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; gap: 48px; align-items: center; margin-top: 8px">
+      <div style="width: 300px; height: 320px; border-radius: 40px; background: #FFFFFF; box-shadow: 0 10px 0 rgba(27,42,65,.12); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px">
+        <dc-import name="Animal" kind="{{ targetId }}" size="230" hint-size="230px,230px"></dc-import>
+        <span style="font-size: 32px; font-weight: 600">{{ targetDisplay }}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+        <sc-for list="{{ homes }}" as="h" hint-placeholder-count="4">
+          <button class="card {{ h.cls }}" onClick="{{ h.pick }}" style="width: 220px; height: 150px; border: 6px solid {{ h.border }}; border-radius: 32px; background: {{ h.bg }}; opacity: {{ h.op }}; box-shadow: 0 8px 0 rgba(27,42,65,.12); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #1B2A41; font-size: 30px; font-weight: 600">
+            <sc-if value="{{ h.isGranja }}" hint-placeholder-val="{{ false }}">
+              <svg width="68" height="68" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 28L32 10l24 18v28H8z" fill="#D9534F"></path><path d="M8 28L32 10l24 18" fill="none" stroke="#8E2B28" stroke-width="4" stroke-linejoin="round"></path><rect x="22" y="34" width="20" height="22" fill="#FFFFFF"></rect><path d="M22 34l20 22M42 34L22 56" stroke="#D9534F" stroke-width="3"></path><rect x="27" y="20" width="10" height="8" fill="#FFFFFF"></rect></svg>
+            </sc-if>
+            <sc-if value="{{ h.isSelva }}" hint-placeholder-val="{{ false }}">
+              <svg width="68" height="68" viewBox="0 0 64 64" aria-hidden="true"><rect x="28" y="30" width="8" height="28" rx="3" fill="#8B5A33"></rect><circle cx="32" cy="22" r="14" fill="#3E9C4A"></circle><circle cx="18" cy="30" r="11" fill="#57B862"></circle><circle cx="46" cy="30" r="11" fill="#57B862"></circle><circle cx="38" cy="18" r="3" fill="#F2A04A"></circle></svg>
+            </sc-if>
+            <sc-if value="{{ h.isCasa }}" hint-placeholder-val="{{ false }}">
+              <svg width="68" height="68" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 30L32 12l22 18v26H10z" fill="#FFB347"></path><path d="M6 32L32 10l26 22" fill="none" stroke="#B5541E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><rect x="27" y="38" width="10" height="18" rx="2" fill="#8B5A33"></rect><rect x="15" y="34" width="8" height="8" fill="#7CC6FF"></rect><rect x="41" y="34" width="8" height="8" fill="#7CC6FF"></rect></svg>
+            </sc-if>
+            <sc-if value="{{ h.isAgua }}" hint-placeholder-val="{{ false }}">
+              <svg width="68" height="68" viewBox="0 0 64 64" fill="none" stroke-linecap="round" aria-hidden="true"><path d="M6 24c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="#3B8FD9" stroke-width="5"></path><path d="M6 38c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="#2A6FB5" stroke-width="5"></path><path d="M6 52c6-6 10-6 16 0s10 6 16 0 10-6 16 0" stroke="#3B8FD9" stroke-width="5"></path></svg>
+            </sc-if>
+            {{ h.label }}
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMathMode }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 26px">
+      <div style="display: flex; align-items: center; gap: 14px; min-height: 140px">
+        <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+          <sc-if value="{{ g.showSign }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size: 60px; font-weight: 700; color: #1F5FBF">{{ g.sign }}</span>
+          </sc-if>
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 300px; box-sizing: border-box; padding: 12px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 6px 0 rgba(27,42,65,.10)">
+            <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+              <div style="position: relative; width: 52px; height: 52px">
+                <div style="opacity: {{ it.op }}">
+                  <dc-import name="Animal" kind="{{ it.id }}" size="52" hint-size="52px,52px"></dc-import>
+                </div>
+                <sc-if value="{{ it.crossed }}" hint-placeholder-val="{{ false }}">
+                  <svg style="position: absolute; left: 0; top: 0" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><path d="M10 10L42 42M42 10L10 42" stroke="#C2410C" stroke-width="6" stroke-linecap="round"></path></svg>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 32px">
+        <sc-for list="{{ mathOpts }}" as="m" hint-placeholder-count="3">
+          <button class="card {{ m.cls }}" onClick="{{ m.pick }}" style="width: 170px; height: 170px; border: 6px solid {{ m.border }}; border-radius: 40px; background: {{ m.bg }}; opacity: {{ m.op }}; box-shadow: 0 10px 0 rgba(27,42,65,.12); color: #1B2A41; font-size: 88px; font-weight: 700; padding: 0">{{ m.n }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="margin-top: auto; height: 68px; padding: 0 36px; border-radius: 34px; background: {{ fbBg }}; color: {{ fbColor }}; display: flex; align-items: center; font-size: 30px; font-weight: 600" role="status">{{ fbText }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+<div style="height: 768px; box-sizing: border-box; padding: 64px 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px">
+  <h1 style="margin: 0; font-size: 88px; font-weight: 700; color: #1F5FBF">¡Lo lograste!</h1>
+  <div style="display: flex; gap: 14px">
+    <sc-for list="{{ starsList }}" as="s" hint-placeholder-count="5">
+      <div class="bounce" style="animation-delay: {{ s.delay }}">
+        <svg width="84" height="84" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" fill="#FFCB47" stroke="#D9A21E" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+      </div>
+    </sc-for>
+  </div>
+  <p style="margin: 0; font-size: 34px; font-weight: 500; color: #3A4A66">{{ doneText }}</p>
+  <div style="display: flex; gap: 16px; align-items: flex-end">
+    <sc-for list="{{ parade }}" as="p" hint-placeholder-count="5">
+      <div class="bounce" style="animation-delay: {{ p.delay }}">
+        <dc-import name="Animal" kind="{{ p.id }}" size="110" hint-size="110px,110px"></dc-import>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display: flex; gap: 24px; margin-top: 8px">
+    <button onClick="{{ again }}" style="height: 88px; padding: 0 44px; border: none; border-radius: 44px; background: #FFCB47; box-shadow: 0 8px 0 #D9A21E; color: #1B2A41; font-size: 34px; font-weight: 600">Jugar otra vez</button>
+    <button onClick="{{ goMenu }}" style="height: 88px; padding: 0 44px; border: none; border-radius: 44px; background: #FFFFFF; box-shadow: 0 8px 0 rgba(27,42,65,.14); color: #1B2A41; font-size: 34px; font-weight: 600">Menú</button>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"voz":{"editor":"boolean","default":true,"section":"Juego"},"rondas":{"editor":"enum","options":[3,5,8],"default":5,"section":"Juego"},"operaciones":{"editor":"enum","options":["Todas","Sumas","Sumas y restas"],"default":"Todas","section":"Números"},"$preview":{"width":1024,"height":768}}'>
+const ANIMALS = [
+  { id: 'vaca', art: 'la', nom: 'vaca', sound: 'Muuu', home: 'granja' },
+  { id: 'perro', art: 'el', nom: 'perro', sound: 'Guau guau', home: 'casa' },
+  { id: 'gato', art: 'el', nom: 'gato', sound: 'Miau', home: 'casa' },
+  { id: 'leon', art: 'el', nom: 'león', sound: 'Grrr', home: 'selva' },
+  { id: 'pato', art: 'el', nom: 'pato', sound: 'Cuac cuac', home: 'granja' },
+  { id: 'cerdo', art: 'el', nom: 'cerdo', sound: 'Oinc oinc', home: 'granja' },
+  { id: 'oveja', art: 'la', nom: 'oveja', sound: 'Beee', home: 'granja' },
+  { id: 'rana', art: 'la', nom: 'rana', sound: 'Croac', home: 'agua' },
+  { id: 'elefante', art: 'el', nom: 'elefante', sound: 'Pruuu', home: 'selva' },
+  { id: 'mono', art: 'el', nom: 'mono', sound: 'Uh uh ah ah', home: 'selva' },
+  { id: 'pez', art: 'el', nom: 'pez', sound: '', home: 'agua' }
+];
+const HOMES = [
+  { id: 'granja', label: 'Granja', en: 'en la granja', bg: '#FFE3D3' },
+  { id: 'selva', label: 'Selva', en: 'en la selva', bg: '#DDF3DD' },
+  { id: 'casa', label: 'Casa', en: 'en la casa', bg: '#FFF1C9' },
+  { id: 'agua', label: 'Agua', en: 'en el agua', bg: '#D6ECFF' }
+];
+const PARADE = ['vaca', 'leon', 'pato', 'gato', 'rana'];
+const MATH_ANIMALS = ['pato', 'pez', 'cerdo', 'rana', 'gato', 'oveja'];
+const WORD = { '+': 'más', '-': 'menos', '×': 'por' };
+const SIGN = { '+': '+', '-': '−', '×': '×' };
+function rnd(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+function shuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = b[i]; b[i] = b[j]; b[j] = t; } return b; }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { screen: 'menu', mode: 'find', round: 0, stars: 0, q: null, feedback: null, wrong: [], picked: null };
+    this.timer = null;
+  }
+  componentWillUnmount() { clearTimeout(this.timer); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} }
+  total() { return Number(this.props.rondas ?? 5) || 5; }
+  speak(text) {
+    if ((this.props.voz ?? true) === false) return;
+    try {
+      const s = window.speechSynthesis;
+      if (!s) return;
+      s.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'es-MX'; u.rate = 0.9; u.pitch = 1.15;
+      s.speak(u);
+    } catch (e) {}
+  }
+  makeMath(prev) {
+    const set = this.props.operaciones ?? 'Todas';
+    const ops = set === 'Sumas' ? ['+'] : (set === 'Sumas y restas' ? ['+', '-'] : ['+', '-', '×']);
+    let q = null, tries = 0;
+    do {
+      const op = ops[rnd(0, ops.length - 1)];
+      let a, b, ans;
+      if (op === '+') { a = rnd(1, 5); b = rnd(1, 5); ans = a + b; }
+      else if (op === '-') { a = rnd(2, 9); b = rnd(1, a - 1); ans = a - b; }
+      else { a = rnd(1, 3); b = rnd(1, 4); ans = a * b; }
+      const opts = [ans];
+      while (opts.length < 3) { const n = ans + rnd(-3, 3); if (n >= 0 && opts.indexOf(n) < 0) opts.push(n); }
+      q = { op, a, b, ans, key: a + op + b, animal: MATH_ANIMALS[rnd(0, MATH_ANIMALS.length - 1)], options: shuffle(opts) };
+      tries++;
+    } while (q.key === prev && tries < 10);
+    return q;
+  }
+  makeQ(mode, prevId) {
+    if (mode === 'math') return this.makeMath(prevId);
+    const pool = mode === 'sound' ? ANIMALS.filter((a) => a.sound) : ANIMALS;
+    const choices = pool.filter((a) => a.id !== prevId);
+    const target = choices[Math.floor(Math.random() * choices.length)];
+    const others = shuffle(pool.filter((a) => a.id !== target.id)).slice(0, 2);
+    return { target, key: target.id, options: shuffle([target].concat(others)) };
+  }
+  sayPrompt(mode, q) {
+    if (mode === 'math') { this.speak('¿Cuánto es ' + q.a + ' ' + WORD[q.op] + ' ' + q.b + '?'); return; }
+    const t = q.target;
+    if (mode === 'find') this.speak('¿Dónde está ' + t.art + ' ' + t.nom + '?');
+    else if (mode === 'sound') this.speak('¿Quién dice ' + t.sound + '?');
+    else this.speak('¿Dónde vive ' + t.art + ' ' + t.nom + '?');
+  }
+  start(mode) {
+    clearTimeout(this.timer);
+    const q = this.makeQ(mode, null);
+    this.setState({ screen: 'play', mode, round: 0, stars: 0, q, feedback: null, wrong: [], picked: null });
+    this.sayPrompt(mode, q);
+  }
+  answer(id) {
+    const st = this.state;
+    if (st.feedback === 'ok' || !st.q) return;
+    const t = st.q.target;
+    let correct;
+    if (st.mode === 'math') correct = id === st.q.ans;
+    else if (st.mode === 'home') correct = id === t.home;
+    else correct = id === t.id;
+    if (!correct) {
+      this.setState({ feedback: 'no', wrong: st.wrong.concat([id]), picked: id });
+      this.speak('¡Casi! Intenta otra vez');
+      return;
+    }
+    this.setState({ feedback: 'ok', picked: id, stars: st.stars + 1 });
+    if (st.mode === 'math') this.speak('¡Muy bien! ' + st.q.a + ' ' + WORD[st.q.op] + ' ' + st.q.b + ' es ' + st.q.ans);
+    else if (st.mode === 'find') this.speak('¡Muy bien! Es ' + t.art + ' ' + t.nom);
+    else if (st.mode === 'sound') this.speak('¡Muy bien! ' + cap(t.art) + ' ' + t.nom + ' dice ' + t.sound);
+    else this.speak('¡Sí! ' + cap(t.art) + ' ' + t.nom + ' vive ' + HOMES.find((h) => h.id === t.home).en);
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.next(), 2200);
+  }
+  next() {
+    const st = this.state;
+    if (st.round + 1 >= this.total()) {
+      this.setState({ screen: 'done', feedback: null });
+      this.speak('¡Lo lograste! ¡Ganaste ' + st.stars + ' estrellas!');
+      return;
+    }
+    const q = this.makeQ(st.mode, st.q.key);
+    this.setState({ round: st.round + 1, q, feedback: null, wrong: [], picked: null });
+    this.sayPrompt(st.mode, q);
+  }
+  renderVals() {
+    const st = this.state;
+    const total = this.total();
+    const q = st.q;
+    const t = q && q.target ? q.target : ANIMALS[3];
+    const ok = st.feedback === 'ok';
+    const cardLook = (isRight, isWrong) => ({
+      border: ok && isRight ? '#2E9E5B' : 'transparent',
+      bg: ok && isRight ? '#E3F6EA' : '#FFFFFF',
+      op: isWrong ? '0.35' : '1',
+      cls: ok && isRight ? 'ok' : (isWrong && st.picked && st.feedback === 'no' ? 'no' : '')
+    });
+    const options = (q && q.target ? q.options : ANIMALS.slice(0, 3)).map((a) => {
+      const isRight = a.id === t.id;
+      const isWrong = st.wrong.indexOf(a.id) >= 0;
+      const look = cardLook(isRight, isWrong);
+      return Object.assign({ id: a.id, display: cap(a.nom), label: ok && isRight ? cap(a.nom) : '', pick: () => this.answer(a.id) }, look);
+    });
+    const homes = HOMES.map((h) => {
+      const isRight = h.id === t.home;
+      const isWrong = st.wrong.indexOf(h.id) >= 0;
+      const look = cardLook(isRight, isWrong);
+      return Object.assign({ label: h.label, isGranja: h.id === 'granja', isSelva: h.id === 'selva', isCasa: h.id === 'casa', isAgua: h.id === 'agua', pick: () => this.answer(h.id) }, look, { bg: ok && isRight ? '#E3F6EA' : h.bg });
+    });
+    const shownStars = st.screen === 'done' ? st.stars : total;
+    const starsList = [];
+    for (let i = 0; i < shownStars; i++) starsList.push({ filled: i < st.stars, empty: i >= st.stars, delay: (i * 0.15) + 's' });
+    let groups = [], mathOpts = [];
+    if (st.mode === 'math' && q && q.op) {
+      const mk = (n, fadeFrom) => {
+        const items = [];
+        for (let i = 0; i < n; i++) { const faded = fadeFrom != null && i >= fadeFrom; items.push({ id: q.animal, op: faded ? '0.3' : '1', crossed: faded }); }
+        return items;
+      };
+      if (q.op === '+') groups = [{ items: mk(q.a), showSign: false, sign: '' }, { items: mk(q.b), showSign: true, sign: '+' }];
+      else if (q.op === '-') groups = [{ items: mk(q.a, q.a - q.b), showSign: false, sign: '' }];
+      else for (let i = 0; i < q.a; i++) groups.push({ items: mk(q.b), showSign: i > 0, sign: '+' });
+      mathOpts = q.options.map((n) => Object.assign({ n: String(n), pick: () => this.answer(n) }, cardLook(n === q.ans, st.wrong.indexOf(n) >= 0)));
+    }
+    let promptText = '';
+    if (st.mode === 'math') promptText = q && q.op ? '¿Cuánto es ' + q.a + ' ' + SIGN[q.op] + ' ' + q.b + '?' : '';
+    else if (st.mode === 'find') promptText = '¿Dónde está ' + t.art + ' ' + t.nom + '?';
+    else if (st.mode === 'sound') promptText = '¿Quién dice “' + t.sound + '”?';
+    else promptText = '¿Dónde vive ' + t.art + ' ' + t.nom + '?';
+    let fbText = st.mode === 'home' ? 'Toca su casa' : (st.mode === 'math' ? 'Cuenta y toca el número' : 'Toca un animal');
+    let fbBg = '#FFFFFF', fbColor = '#4A5872';
+    if (ok) { fbText = '¡Muy bien!'; fbBg = '#D7F2E0'; fbColor = '#1C6B3C'; }
+    else if (st.feedback === 'no') { fbText = '¡Casi! Intenta otra vez'; fbBg = '#FFE0CC'; fbColor = '#8A3A10'; }
+    return {
+      isMenu: st.screen === 'menu',
+      isPlay: st.screen === 'play',
+      isDone: st.screen === 'done',
+      isPickMode: st.mode === 'find' || st.mode === 'sound',
+      isHomeMode: st.mode === 'home',
+      isMathMode: st.mode === 'math',
+      groups,
+      mathOpts,
+      startMath: () => this.start('math'),
+      parade: PARADE.map((id, i) => ({ id, delay: (i * 0.2) + 's' })),
+      startFind: () => this.start('find'),
+      startSound: () => this.start('sound'),
+      startHome: () => this.start('home'),
+      again: () => this.start(st.mode),
+      goMenu: () => { clearTimeout(this.timer); this.setState({ screen: 'menu', feedback: null }); },
+      repeat: () => { if (q) this.sayPrompt(st.mode, q); },
+      roundLabel: 'Ronda ' + (st.round + 1) + ' de ' + total,
+      promptText,
+      options,
+      homes,
+      targetId: t.id,
+      targetDisplay: cap(t.nom),
+      starsList,
+      starsLabel: st.stars + ' de ' + total + ' estrellas',
+      fbText, fbBg, fbColor,
+      doneText: st.stars === 1 ? 'Ganaste 1 estrella' : 'Ganaste ' + st.stars + ' estrellas'
+    };
+  }
+}
+</script>
+</body>
+</html>
