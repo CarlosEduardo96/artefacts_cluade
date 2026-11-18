@@ -149,10 +149,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <span style="font-size: 12px; color: #5A6170">Al borrar una votación, la historia vuelve a quedar pendiente y se vota de nuevo.</span>
 </div>
 </sc-if>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button type="button" onClick="{{copyTable}}" disabled="{{noResults}}" style="height: 44px; border: 1px solid #14171F; border-radius: 10px; background: #FFFFFF; color: #14171F; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg>
+{{copyTableLabel}}
+</button>
 <button type="button" onClick="{{download}}" disabled="{{noResults}}" style="height: 44px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
-Descargar reporte (Excel)
+Exportar reporte
 </button>
+</div>
 </section>
 
 </div>
@@ -162,18 +168,18 @@ Descargar reporte (Excel)
 <!-- ============ LOGIN ============ -->
 <sc-if value="{{showLogin}}" hint-placeholder-val="{{ false }}">
 <div style="display: flex; justify-content: center; padding-top: 32px">
-<form onSubmit="{{login}}" style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+<div style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
 <div>
 <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px">Unirse a la sesión</h1>
 <p style="margin: 6px 0 0; color: #5A6170">Ingresa tu nombre y el folio que te compartió el administrador.</p>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="u-name" style="font-size: 13px; font-weight: 600; color: #3D4350">Nombre</label>
-<input id="u-name" type="text" autocomplete="name" value="{{nameInput}}" onChange="{{onNameInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F">
+<input id="u-name" type="text" autocomplete="name" value="{{nameInput}}" onChange="{{onNameInput}}" onKeyDown="{{onLoginKey}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F">
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="u-folio" style="font-size: 13px; font-weight: 600; color: #3D4350">Folio de la sesión</label>
-<input id="u-folio" type="text" placeholder="SP-0000" value="{{folioInput}}" onChange="{{onFolioInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F; text-transform: uppercase; letter-spacing: .04em">
+<input id="u-folio" type="text" placeholder="SP-0000" value="{{folioInput}}" onChange="{{onFolioInput}}" onKeyDown="{{onLoginKey}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F; text-transform: uppercase; letter-spacing: .04em">
 <sc-if value="{{hasFolioHint}}" hint-placeholder-val="{{ true }}">
 <span style="font-size: 13px; color: #5A6170">Folio de la sesión activa: <strong style="color: #3D4350">{{folio}}</strong></span>
 </sc-if>
@@ -181,8 +187,8 @@ Descargar reporte (Excel)
 <sc-if value="{{hasLoginError}}" hint-placeholder-val="{{ false }}">
 <div role="alert" style="font-size: 14px; color: #9A3412; background: #FFF4EC; border-radius: 8px; padding: 10px 12px">{{loginError}}</div>
 </sc-if>
-<button type="submit" style="height: 48px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Entrar</button>
-</form>
+<button type="button" onClick="{{login}}" style="height: 48px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Entrar</button>
+</div>
 </div>
 </sc-if>
 
@@ -275,10 +281,16 @@ Descargar reporte (Excel)
 </tbody>
 </table>
 </div>
-<button type="button" onClick="{{download}}" style="align-self: center; height: 48px; padding: 0 28px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px">
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
-Descargar reporte (Excel)
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px">
+<button type="button" onClick="{{copyTable}}" style="height: 48px; padding: 0 28px; border: 1px solid #14171F; border-radius: 10px; background: #FFFFFF; color: #14171F; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg>
+{{copyTableLabel}}
 </button>
+<button type="button" onClick="{{download}}" style="height: 48px; padding: 0 28px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
+Exportar reporte (Excel)
+</button>
+</div>
 </div>
 </sc-if>
 
@@ -331,6 +343,23 @@ Descargar reporte (Excel)
 </div>
 </sc-if>
 
+<sc-if value="{{showReport}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: rgba(20,23,31,.5); display: flex; justify-content: center; align-items: flex-start; padding: 96px 16px 32px; box-sizing: border-box">
+<div role="dialog" aria-modal="true" aria-labelledby="rep-title" style="width: 100%; max-width: 640px; background: #FFFFFF; border-radius: 18px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 60px rgba(20,23,31,.25)">
+<div>
+<h2 id="rep-title" style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px">Reporte de la sesión {{folio}}</h2>
+<p style="margin: 6px 0 0; font-size: 14px; color: #5A6170">Pulsa «Copiar reporte» y pégalo en la celda A1 de una hoja de Excel: cada dato cae en su columna (Historia de usuario, Folio, Dificultad).</p>
+</div>
+<label for="rep-text" style="font-size: 13px; font-weight: 600; color: #3D4350">Contenido del reporte</label>
+<textarea id="rep-text" readonly="readonly" ref="{{reportRef}}" onFocus="{{selectReport}}" value="{{reportText}}" style="width: 100%; box-sizing: border-box; height: 220px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 10px 12px; font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; color: #14171F; resize: vertical; white-space: pre; overflow: auto"></textarea>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end">
+<button type="button" onClick="{{closeReport}}" style="height: 44px; padding: 0 20px; border: 1px solid #CDD2DB; border-radius: 10px; background: #FFFFFF; color: #3D4350; font: inherit; font-weight: 600; cursor: pointer">Cerrar</button>
+<button type="button" onClick="{{copyReport}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); background: #14171F; color: #FFFFFF; border-radius: 10px; padding: 12px 18px; font-size: 14px">{{toast}}</div>
 </sc-if>
@@ -357,7 +386,7 @@ var DURATIONS = [1, 2, 3, 5, 10];
 function freshState() {
   return { role: 'admin', sessionInput: 'Sprint 14 · Planning', sessionName: '', folio: '', stories: [], fileName: '',
     nameInput: '', folioInput: '', loginError: '', userName: '', loggedIn: false,
-    idx: 0, myVote: null, reveal: false, results: [], toast: '', deadline: null, deadlineTotal: null, now: 0, timedOut: false, duration: 2, confirmDel: null };
+    idx: 0, myVote: null, reveal: false, results: [], toast: '', deadline: null, deadlineTotal: null, now: 0, timedOut: false, duration: 2, confirmDel: null, showReport: false, copied: false, tableCopied: false };
 }
 
 function computeStats(votes) {
@@ -447,18 +476,64 @@ class Component extends DCLogic {
     e.target.value = '';
   }
 
-  downloadReport() {
+  reportText() {
     var st = this.state;
+    var cell = function (c) { return String(c == null ? '' : c).replace(/[\t\r\n]+/g, ' '); };
     var rows = [['Historia de usuario', 'Folio', 'Dificultad']].concat(st.results.filter(Boolean).map(function (r) { return [r.title, r.folio, r.points]; }));
-    var csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+    return rows.map(function (r) { return r.map(cell).join('\t'); }).join('\n');
+  }
+
+  downloadReport() {
+    this.setState({ showReport: true, copied: false });
+  }
+
+  copyTable() {
+    var text = this.reportText();
+    var ok = () => {
+      this.setState({ tableCopied: true });
+      this.flash('Tabla copiada: pégala en tu hoja de cálculo');
+      clearTimeout(this._tc);
+      this._tc = setTimeout(() => this.setState({ tableCopied: false }), 2600);
+    };
+    // Si el navegador no deja copiar directo, abre la ventana del reporte con el texto listo.
+    var fallback = () => { this.setState({ showReport: true, copied: false }); this.flash('Selecciona el texto y pulsa Ctrl+C (Cmd+C en Mac)'); };
     try {
-      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      var a = document.createElement('a');
-      a.href = url; a.download = 'reporte-' + (st.folio || 'sesion') + '.csv';
-      a.click();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, fallback);
+        return;
+      }
     } catch (e) {}
-    this.flash('Reporte descargado');
+    fallback();
+  }
+
+  copyReport() {
+    var text = this.reportText();
+    var done = () => { this.setState({ copied: true }); this.flash('Reporte copiado: pégalo en Excel'); };
+    var fallback = () => {
+      var ta = this._reportEl;
+      try {
+        if (ta) { ta.focus(); ta.select(); }
+        if (document.execCommand && document.execCommand('copy')) { done(); return; }
+      } catch (e) {}
+      this.flash('Selecciona el texto y pulsa Ctrl+C (Cmd+C en Mac)');
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+        return;
+      }
+    } catch (e) {}
+    fallback();
+  }
+
+  doLogin() {
+    var s = this.state;
+    var name = s.nameInput.trim();
+    var f = s.folioInput.trim().toUpperCase();
+    if (!name) return this.setState({ loginError: 'Escribe tu nombre.' });
+    if (!f) return this.setState({ loginError: 'Escribe el folio de la sesión.' });
+    if (!s.folio || f !== s.folio) return this.setState({ loginError: 'No hay una sesión activa con el folio ' + f + '.' });
+    this.setState({ userName: name, loggedIn: true, loginError: '' });
   }
 
   renderVals() {
@@ -606,17 +681,19 @@ class Component extends DCLogic {
       resetAll: () => { var f = freshState(); f.duration = minutes; this.setState(f); this.flash('Sesión cerrada'); },
       onFile: (e) => this.handleFile(e),
       download: () => this.downloadReport(),
+      showReport: !!s.showReport,
+      reportText: s.showReport ? this.reportText() : '',
+      reportRef: (el) => { this._reportEl = el; },
+      selectReport: (e) => { try { e.target.select(); } catch (err) {} },
+      copyReport: () => this.copyReport(),
+      closeReport: () => this.setState({ showReport: false, copied: false }),
+      copyLabel: s.copied ? 'Copiado' : 'Copiar reporte',
+      copyTable: () => this.copyTable(),
+      copyTableLabel: s.tableCopied ? 'Tabla copiada' : 'Copiar tabla',
       onNameInput: (e) => this.setState({ nameInput: e.target.value, loginError: '' }),
       onFolioInput: (e) => this.setState({ folioInput: e.target.value, loginError: '' }),
-      login: (e) => {
-        if (e && e.preventDefault) e.preventDefault();
-        var name = s.nameInput.trim();
-        var f = s.folioInput.trim().toUpperCase();
-        if (!name) return this.setState({ loginError: 'Escribe tu nombre.' });
-        if (!f) return this.setState({ loginError: 'Escribe el folio de la sesión.' });
-        if (!s.folio || f !== s.folio) return this.setState({ loginError: 'No hay una sesión activa con el folio ' + f + '.' });
-        this.setState({ userName: name, loggedIn: true, loginError: '' });
-      },
+      login: () => this.doLogin(),
+      onLoginKey: (e) => { if (e && e.key === 'Enter') this.doLogin(); },
       submitVote: () => { if (s.myVote) this.setState({ reveal: true, deadline: null, deadlineTotal: null, timedOut: false }); },
       nextStory: () => {
         var st = computeStats(allVotes);
