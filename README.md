@@ -70,7 +70,7 @@ Página que lee un Excel (`.xlsx`) o CSV con los registros GPS de un camión y m
 | Sección | Qué muestra |
 |---|---|
 | Resumen | Camión, origen y destino con hora de salida y llegada, tiempo de origen a destino, tiempo en movimiento, distancia y velocidad máxima. |
-| Mapa | Trazo del recorrido sobre el mapa de calles de OpenStreetMap, con el origen, el destino y las paradas numeradas (verde normal, rojo brusca). Al pasar el cursor o tocar una parada se ven su hora, duración y frenado. Si el mapa de calles no se puede cargar, el trayecto se dibuja sin fondo y los nombres de ciudades no se enciman. |
+| Mapa | Trazo del recorrido sobre el mapa de calles de OpenStreetMap, con el origen, el destino y las paradas numeradas (verde normal, rojo brusca). Al pasar el cursor o tocar una parada se ven su hora, duración y frenado. Si el mapa de calles no se puede cargar, el trayecto se dibuja sin fondo y los nombres de ciudades no se enciman. Debajo, el botón «Ver las paradas en Google Maps» abre una pestaña nueva con el origen, cada parada en orden y el destino, por sus coordenadas (con más de 9 paradas se parte en tramos, porque Google Maps admite pocos puntos por enlace). |
 | Velocidad | Km/h a lo largo del viaje, con franjas en las paradas. Las etiquetas se ajustan al ancho y no se cortan. |
 | Paradas | Tabla con hora, lugar, duración, frenado (m/s²), tipo y un enlace para ver cada parada en Google Maps. |
 
