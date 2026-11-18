@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Scrum Poker</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F5F8}
+a{color:#3B4BDB}a:hover{color:#2A37A8}
+input:focus-visible,button:focus-visible,label:focus-within{outline:2px solid #3B4BDB;outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</helmet>
+<div style="position: relative; min-height: 900px; background: #F4F5F8; color: #14171F; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<header style="background: #FFFFFF; border-bottom: 1px solid #E3E6EC">
+<div style="max-width: 1200px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="width: 36px; height: 44px; border-radius: 8px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; transform: rotate(-6deg)">8</div>
+<div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; line-height: 1.1">Scrum Poker</div>
+<div style="font-size: 13px; color: #5A6170">Estimación de historias de usuario</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<sc-if value="{{hasSession}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #3D4350; background: #F4F5F8; border: 1px solid #E3E6EC; border-radius: 999px; padding: 6px 12px">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F7A4F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+<span>Progreso guardado · {{doneCount}}/{{storyCount}}</span>
+</div>
+</sc-if>
+<div role="group" aria-label="Cambiar vista" style="display: flex; background: #EDEFF3; border-radius: 10px; padding: 4px; gap: 4px">
+<button type="button" onClick="{{toAdmin}}" style="{{adminTabStyle}}">Administrador</button>
+<button type="button" onClick="{{toUser}}" style="{{userTabStyle}}">Participante</button>
+</div>
+</div>
+</div>
+</header>
+
+<main style="max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box">
+
+<!-- ============ ADMIN ============ -->
+<sc-if value="{{showAdmin}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<div>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px; line-height: 1.2">Panel del administrador</h1>
+<p style="margin: 6px 0 0; color: #5A6170">Crea la sesión, carga las historias y descarga el reporte al terminar.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start">
+
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 28px; height: 28px; border-radius: 50%; background: #EEF0FC; color: {{accent}}; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">1</span>
+<h2 style="margin: 0; font-size: 17px">Crear sesión de votación</h2>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="dur-label" style="font-size: 13px; font-weight: 600; color: #3D4350">Tiempo de votación por historia</span>
+<div role="group" aria-labelledby="dur-label" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{durationOptions}}" as="d" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{d.pressed}}" onClick="{{d.pick}}" style="{{d.style}}">{{d.label}}</button>
+</sc-for>
+</div>
+<span style="font-size: 13px; color: #5A6170">Puedes cambiarlo en cualquier momento; se aplica desde la siguiente historia.</span>
+</div>
+<sc-if value="{{noSession}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<label for="sess-name" style="font-size: 13px; font-weight: 600; color: #3D4350">Nombre de la sesión</label>
+<input id="sess-name" type="text" value="{{sessionInput}}" onChange="{{onSessionInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F">
+<button type="button" onClick="{{createSession}}" style="height: 44px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Crear sesión</button>
+</div>
+</sc-if>
+<sc-if value="{{hasSession}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 14px; color: #5A6170">{{sessionName}}</div>
+<div style="border: 1px dashed #CDD2DB; border-radius: 12px; padding: 16px; text-align: center; background: #FAFBFC">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5A6170">Folio de la sesión</div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; letter-spacing: .04em; color: {{accent}}">{{folio}}</div>
+<div style="font-size: 13px; color: #5A6170">Compártelo con los participantes para que inicien sesión.</div>
+</div>
+<button type="button" onClick="{{resetAll}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; background: #FFFFFF; color: #3D4350; font: inherit; font-weight: 600; cursor: pointer">Cerrar y crear nueva sesión</button>
+</div>
+</sc-if>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 28px; height: 28px; border-radius: 50%; background: #EEF0FC; color: {{accent}}; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">2</span>
+<h2 style="margin: 0; font-size: 17px">Cargar historias de usuario</h2>
+</div>
+<label style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 2px dashed #CDD2DB; border-radius: 12px; padding: 24px 16px; text-align: center; cursor: pointer; background: #FAFBFC">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5A6170" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"></path><path d="m7 9 5-5 5 5"></path><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path></svg>
+<span style="font-weight: 600">Seleccionar archivo de Excel</span>
+<span style="font-size: 13px; color: #5A6170">.xlsx, .xls o .csv</span>
+<input type="file" accept=".xlsx,.xls,.csv" disabled="{{noSession}}" onChange="{{onFile}}" style="position: absolute; inset: 0; opacity: 0; cursor: pointer">
+</label>
+<div style="font-size: 13px; color: #5A6170">Formato: columna A <strong style="color: #3D4350">Historia de usuario</strong>, columna B <strong style="color: #3D4350">Folio</strong>.</div>
+<sc-if value="{{noSession}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 13px; color: #9A3412; background: #FFF4EC; border-radius: 8px; padding: 8px 12px">Primero crea una sesión.</div>
+</sc-if>
+<sc-if value="{{hasStories}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 13px; color: #3D4350"><strong>{{fileName}}</strong> · {{storyCount}} historias</div>
+<div style="border: 1px solid #E3E6EC; border-radius: 10px; overflow: hidden">
+<sc-for list="{{storyRows}}" as="s" hint-placeholder-count="4">
+<div style="display: flex; gap: 12px; padding: 10px 12px; border-top: 1px solid #EDEFF3; font-size: 14px">
+<span style="flex: 0 0 64px; color: #5A6170; font-variant-numeric: tabular-nums">{{s.folio}}</span>
+<span style="flex: 1 1 auto; min-width: 0">{{s.title}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 28px; height: 28px; border-radius: 50%; background: #EEF0FC; color: {{accent}}; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">3</span>
+<h2 style="margin: 0; font-size: 17px">Progreso y reporte</h2>
+</div>
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #3D4350"><span>{{statusLabel}}</span><span>{{doneCount}}/{{storyCount}}</span></div>
+<div style="height: 8px; background: #EDEFF3; border-radius: 999px; overflow: hidden; margin-top: 6px"><div style="{{progressStyle}}"></div></div>
+</div>
+<sc-if value="{{hasResults}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<h3 style="margin: 0; font-size: 14px">Votaciones realizadas</h3>
+<button type="button" onClick="{{clearAll}}" style="{{clearStyle}}">{{clearLabel}}</button>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; border: 1px solid #E3E6EC; border-radius: 10px; max-height: 380px; overflow-y: auto">
+<sc-for list="{{resultRows}}" as="r" hint-placeholder-count="3">
+<li style="display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-top: 1px solid #EDEFF3">
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><span style="font-size: 13px; color: #5A6170">{{r.folio}}</span><span style="{{r.pointsStyle}}">{{r.points}}</span></div>
+<div style="font-size: 14px">{{r.title}}</div>
+<div style="font-size: 12px; color: #5A6170">{{r.votesText}}</div>
+</div>
+<button type="button" aria-label="{{r.delAria}}" onClick="{{r.del}}" style="{{r.delStyle}}">{{r.delLabel}}</button>
+</li>
+</sc-for>
+</ul>
+<span style="font-size: 12px; color: #5A6170">Al borrar una votación, la historia vuelve a quedar pendiente y se vota de nuevo.</span>
+</div>
+</sc-if>
+<button type="button" onClick="{{download}}" disabled="{{noResults}}" style="height: 44px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
+Descargar reporte (Excel)
+</button>
+</section>
+
+</div>
+</div>
+</sc-if>
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{showLogin}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; justify-content: center; padding-top: 32px">
+<form onSubmit="{{login}}" style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+<div>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px">Unirse a la sesión</h1>
+<p style="margin: 6px 0 0; color: #5A6170">Ingresa tu nombre y el folio que te compartió el administrador.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="u-name" style="font-size: 13px; font-weight: 600; color: #3D4350">Nombre</label>
+<input id="u-name" type="text" autocomplete="name" value="{{nameInput}}" onChange="{{onNameInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="u-folio" style="font-size: 13px; font-weight: 600; color: #3D4350">Folio de la sesión</label>
+<input id="u-folio" type="text" placeholder="SP-0000" value="{{folioInput}}" onChange="{{onFolioInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F; text-transform: uppercase; letter-spacing: .04em">
+<sc-if value="{{hasFolioHint}}" hint-placeholder-val="{{ true }}">
+<span style="font-size: 13px; color: #5A6170">Folio de la sesión activa: <strong style="color: #3D4350">{{folio}}</strong></span>
+</sc-if>
+</div>
+<sc-if value="{{hasLoginError}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="font-size: 14px; color: #9A3412; background: #FFF4EC; border-radius: 8px; padding: 10px 12px">{{loginError}}</div>
+</sc-if>
+<button type="submit" style="height: 48px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Entrar</button>
+</form>
+</div>
+</sc-if>
+
+<!-- ============ WAITING ============ -->
+<sc-if value="{{showWaiting}}" hint-placeholder-val="{{ false }}">
+<div style="max-width: 520px; margin: 48px auto 0; text-align: center; background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 40px 32px">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px">Hola, {{userName}}</h1>
+<p style="margin: 8px 0 0; color: #5A6170">Estás dentro de la sesión <strong style="color: #3D4350">{{folio}}</strong>. Esperando a que el administrador cargue las historias de usuario.</p>
+</div>
+</sc-if>
+
+<!-- ============ VOTING ============ -->
+<sc-if value="{{showVoting}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 28px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 13px; color: #5A6170">
+<span style="font-weight: 600; color: {{accent}}; letter-spacing: .06em; text-transform: uppercase">Historia {{storyNumber}} de {{storyCount}}</span>
+<span style="background: #F4F5F8; border-radius: 6px; padding: 2px 8px; color: #3D4350; font-weight: 600">{{current.folio}}</span>
+</div>
+<h1 style="margin: 12px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; line-height: 1.25">{{current.title}}</h1>
+<div role="timer" aria-label="Tiempo restante para votar" style="margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5A6170" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2"></path><path d="M9 2h6"></path></svg>
+<span style="{{timerTextStyle}}">{{timeLeft}}</span>
+<div style="flex: 1 1 160px; height: 8px; background: #EDEFF3; border-radius: 999px; overflow: hidden"><div style="{{timerBarStyle}}"></div></div>
+<span style="font-size: 13px; color: #5A6170">{{durationLabel}} por historia</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 17px">Elige la dificultad</h2>
+<span style="font-size: 13px; color: #5A6170">Serie Fibonacci · «?» si no sabes</span>
+</div>
+<div role="group" aria-label="Cartas de dificultad" style="display: flex; flex-wrap: wrap; gap: 14px; padding-top: 12px">
+<sc-for list="{{cards}}" as="c" hint-placeholder-count="8">
+<button type="button" aria-pressed="{{c.pressed}}" aria-label="{{c.label}}" onClick="{{c.pick}}" style="{{c.style}}">
+<span style="position: absolute; top: 8px; left: 10px; font-size: 13px; font-weight: 600">{{c.v}}</span>
+<span>{{c.v}}</span>
+<span style="position: absolute; bottom: 8px; right: 10px; font-size: 13px; font-weight: 600; transform: rotate(180deg)">{{c.v}}</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px">
+<button type="button" onClick="{{submitVote}}" disabled="{{noVote}}" style="height: 48px; padding: 0 28px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Enviar voto</button>
+<span style="font-size: 14px; color: #5A6170">{{voteHint}}</span>
+</div>
+</section>
+</div>
+
+<aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; padding: 20px">
+<h2 style="margin: 0 0 12px; font-size: 15px">Participantes · {{votedCount}}/{{participantCount}} votaron</h2>
+<sc-for list="{{participants}}" as="p" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #EDEFF3">
+<span style="width: 32px; height: 32px; border-radius: 50%; background: #EDEFF3; color: #3D4350; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center">{{p.initial}}</span>
+<span style="flex: 1 1 auto; min-width: 0; font-size: 14px">{{p.name}}</span>
+<span style="{{p.badgeStyle}}">{{p.status}}</span>
+</div>
+</sc-for>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; padding: 20px">
+<h2 style="margin: 0 0 12px; font-size: 15px">Historias</h2>
+<sc-for list="{{storyStatus}}" as="s" hint-placeholder-count="5">
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #EDEFF3; font-size: 14px">
+<span style="flex: 0 0 60px; color: #5A6170">{{s.folio}}</span>
+<span style="flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{s.title}}</span>
+<span style="{{s.tagStyle}}">{{s.tag}}</span>
+</div>
+</sc-for>
+</section>
+</aside>
+</div>
+</sc-if>
+
+<!-- ============ DONE ============ -->
+<sc-if value="{{showDone}}" hint-placeholder-val="{{ false }}">
+<div style="max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+<div style="text-align: center">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 30px">Votación terminada</h1>
+<p style="margin: 6px 0 0; color: #5A6170">Se estimaron {{estimatedCount}} historias y {{postponedCount}} quedaron pospuestas.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 15px">
+<thead><tr style="background: #F4F5F8; text-align: left"><th style="padding: 12px 16px">Folio</th><th style="padding: 12px 16px">Historia de usuario</th><th style="padding: 12px 16px; text-align: right">Dificultad</th></tr></thead>
+<tbody>
+<sc-for list="{{resultRows}}" as="r" hint-placeholder-count="5">
+<tr style="border-top: 1px solid #EDEFF3"><td style="padding: 12px 16px; color: #5A6170; white-space: nowrap">{{r.folio}}</td><td style="padding: 12px 16px">{{r.title}}</td><td style="padding: 12px 16px; text-align: right; font-weight: 700; white-space: nowrap">{{r.points}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<button type="button" onClick="{{download}}" style="align-self: center; height: 48px; padding: 0 28px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
+Descargar reporte (Excel)
+</button>
+</div>
+</sc-if>
+
+</main>
+
+<!-- ============ RESULT MODAL ============ -->
+<sc-if value="{{reveal}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: rgba(20,23,31,.5); display: flex; justify-content: center; align-items: flex-start; padding: 96px 16px 32px; box-sizing: border-box">
+<div role="dialog" aria-modal="true" aria-labelledby="res-title" style="width: 100%; max-width: 520px; background: #FFFFFF; border-radius: 18px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 24px 60px rgba(20,23,31,.25)">
+<div>
+<div style="font-size: 13px; color: #5A6170">{{current.folio}} · {{revealHeader}}</div>
+<h2 id="res-title" style="margin: 4px 0 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px; line-height: 1.3">{{current.title}}</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<sc-for list="{{revealVotes}}" as="rv" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 72px">
+<div style="width: 52px; height: 72px; border-radius: 10px; border: 1.5px solid #CDD2DB; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px">{{rv.v}}</div>
+<span style="font-size: 12px; color: #5A6170; text-align: center">{{rv.name}}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{timedOut}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 14px; color: #3D4350; background: #F4F5F8; border-radius: 10px; padding: 10px 12px">Se acabaron los 2 minutos. Los votos no emitidos cuentan como «?».</div>
+</sc-if>
+<sc-if value="{{isPostponed}}" hint-placeholder-val="{{ false }}">
+<div style="background: #FFF4EC; color: #7C2D12; border-radius: 12px; padding: 16px">
+<div style="font-weight: 700">Historia pospuesta</div>
+<div style="font-size: 14px; margin-top: 4px">Todos votaron «?». Se marca como pospuesta y pasamos a la siguiente.</div>
+</div>
+</sc-if>
+<sc-if value="{{isEstimated}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div style="background: #F4F5F8; border-radius: 12px; padding: 12px">
+<div style="font-size: 12px; color: #5A6170">Media</div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700">{{stats.avg}}</div>
+</div>
+<div style="background: #F4F5F8; border-radius: 12px; padding: 12px">
+<div style="font-size: 12px; color: #5A6170">Más votada</div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700">{{stats.modeLabel}}</div>
+</div>
+<div style="background: {{accent}}; color: #FFFFFF; border-radius: 12px; padding: 12px">
+<div style="font-size: 12px">Dificultad final</div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700">{{stats.final}}</div>
+</div>
+</div>
+<div style="font-size: 13px; color: #5A6170; margin-top: -8px">{{stats.rule}}</div>
+</sc-if>
+<button type="button" onClick="{{nextStory}}" style="height: 48px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">{{nextLabel}}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); background: #14171F; color: #FFFFFF; border-radius: 10px; padding: 12px 18px; font-size: 14px">{{toast}}</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#3B4BDB","options":["#3B4BDB","#0F766E","#B4441A","#6D28D9"]},"$preview":{"width":1280,"height":900}}'>
+var FIB = ['1', '2', '3', '5', '8', '13', '21', '?'];
+var FIB_NUM = [1, 2, 3, 5, 8, 13, 21];
+var SAMPLE = [
+  { title: 'Como usuario quiero iniciar sesión con correo y contraseña', folio: 'HU-001' },
+  { title: 'Como administrador quiero exportar el listado de clientes', folio: 'HU-002' },
+  { title: 'Como usuario quiero recuperar mi contraseña por correo', folio: 'HU-003' },
+  { title: 'Integración con la pasarela de pagos externa', folio: 'HU-004' },
+  { title: 'Como usuario quiero ver el historial de mis pedidos', folio: 'HU-005' }
+];
+var BOTS = ['Ana', 'Luis', 'Marta'];
+var BOT_VOTES = [['5', '8', '5'], ['3', '3', '5'], ['2', '3', '2'], ['?', '?', '?'], ['8', '13', '8'], ['3', '5', '5']];
+var KEY = 'scrum-poker-progreso-v1';
+var DURATION = 120000;
+var SAVED = ['sessionName', 'folio', 'stories', 'fileName', 'userName', 'loggedIn', 'idx', 'results', 'deadline', 'duration', 'deadlineTotal'];
+var DURATIONS = [1, 2, 3, 5, 10];
+
+function freshState() {
+  return { role: 'admin', sessionInput: 'Sprint 14 · Planning', sessionName: '', folio: '', stories: [], fileName: '',
+    nameInput: '', folioInput: '', loginError: '', userName: '', loggedIn: false,
+    idx: 0, myVote: null, reveal: false, results: [], toast: '', deadline: null, deadlineTotal: null, now: 0, timedOut: false, duration: 2, confirmDel: null };
+}
+
+function computeStats(votes) {
+  var nums = votes.filter(function (v) { return v !== '?'; }).map(Number);
+  if (!nums.length) return { postponed: true };
+  var sum = nums.reduce(function (a, b) { return a + b; }, 0);
+  var avg = sum / nums.length;
+  var counts = {};
+  nums.forEach(function (n) { counts[n] = (counts[n] || 0) + 1; });
+  var max = 0; Object.keys(counts).forEach(function (k) { if (counts[k] > max) max = counts[k]; });
+  var top = Object.keys(counts).filter(function (k) { return counts[k] === max; }).map(Number);
+  var nearest = FIB_NUM.reduce(function (best, f) { return Math.abs(f - avg) <= Math.abs(best - avg) ? f : best; }, 1);
+  var tie = top.length > 1;
+  var final = tie ? nearest : top[0];
+  return {
+    postponed: false,
+    avg: avg.toFixed(1),
+    modeLabel: tie ? 'Empate' : String(top[0]),
+    final: String(final),
+    rule: tie ? 'Hubo empate entre las más votadas: se usa el número Fibonacci más cercano a la media.' : 'La puntuación con más votos (' + max + ') se toma como la dificultad de la historia.'
+  };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = freshState();
+  }
+
+  componentDidMount() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (raw) { var s = JSON.parse(raw); if (s && typeof s === 'object') this.setState(s); }
+    } catch (e) {}
+    this._timer = setInterval(() => this.tick(), 1000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this._timer);
+    clearTimeout(this._t);
+  }
+
+  tick() {
+    var s = this.state;
+    var now = Date.now();
+    var voting = s.role === 'user' && s.loggedIn && s.stories.length > 0 && s.idx < s.stories.length && !s.reveal;
+    if (voting && !s.deadline) { var total = (s.duration || 2) * 60000; this.setState({ deadline: now + total, deadlineTotal: total, now: now }); return; }
+    if (s.deadline && !s.reveal && now >= s.deadline) { this.setState({ reveal: true, timedOut: true, deadline: null, now: now }); return; }
+    if (s.deadline) this.setState({ now: now });
+  }
+
+  componentDidUpdate() {
+    try {
+      var out = {}; var st = this.state;
+      SAVED.forEach(function (k) { out[k] = st[k]; });
+      window.localStorage.setItem(KEY, JSON.stringify(out));
+    } catch (e) {}
+  }
+
+  flash(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: '' }), 2600);
+  }
+
+  loadStories(list, name) {
+    this.setState({ stories: list, fileName: name, idx: 0, results: [], myVote: null, reveal: false, deadline: null, timedOut: false });
+    this.flash(list.length + ' historias cargadas');
+  }
+
+  handleFile(e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var name = f.name;
+    if (/\.(csv|txt)$/i.test(name)) {
+      var r = new FileReader();
+      r.onload = () => {
+        var rows = String(r.result).split(/\r?\n/).filter(function (l) { return l.trim(); }).map(function (l) { return l.split(/[;\t,]/); });
+        var start = rows.length && /historia/i.test(rows[0][0]) ? 1 : 0;
+        var list = rows.slice(start).map(function (c) { return { title: (c[0] || '').replace(/^"|"$/g, '').trim(), folio: (c[1] || '').replace(/^"|"$/g, '').trim() }; }).filter(function (s) { return s.title; });
+        this.loadStories(list.length ? list : SAMPLE, name);
+      };
+      r.readAsText(f);
+    } else {
+      this.loadStories(SAMPLE, name);
+    }
+    e.target.value = '';
+  }
+
+  downloadReport() {
+    var st = this.state;
+    var rows = [['Historia de usuario', 'Folio', 'Dificultad']].concat(st.results.filter(Boolean).map(function (r) { return [r.title, r.folio, r.points]; }));
+    var csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+    try {
+      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = 'reporte-' + (st.folio || 'sesion') + '.csv';
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    } catch (e) {}
+    this.flash('Reporte descargado');
+  }
+
+  renderVals() {
+    var s = this.state;
+    var accent = this.props.accent ?? '#3B4BDB';
+    var hasSession = !!s.folio;
+    var storyCount = s.stories.length;
+    var doneList = s.results.filter(Boolean);
+    var finished = storyCount > 0 && s.stories.every(function (_, i) { return !!s.results[i]; });
+    var isUser = s.role === 'user';
+    var current = s.stories[Math.min(s.idx, Math.max(storyCount - 1, 0))] || { title: '', folio: '' };
+    var botVotes = BOT_VOTES[s.idx % BOT_VOTES.length];
+    var allVotes = botVotes.concat([s.myVote || '?']);
+    var stats = s.reveal ? computeStats(allVotes) : { postponed: false, avg: '', modeLabel: '', final: '', rule: '' };
+
+    var tab = function (on) {
+      return 'height: 40px; padding: 0 16px; border: 0; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ' +
+        (on ? 'background: #FFFFFF; color: #14171F; box-shadow: 0 1px 2px rgba(20,23,31,.12)' : 'background: transparent; color: #5A6170');
+    };
+
+    var cards = FIB.map((v) => {
+      var on = s.myVote === v;
+      return {
+        v: v, pressed: on ? 'true' : 'false', label: v === '?' ? 'No sé la dificultad' : 'Dificultad ' + v,
+        pick: () => { if (!s.reveal) this.setState({ myVote: v }); },
+        style: 'position: relative; width: 84px; height: 120px; border-radius: 14px; cursor: pointer; font-family: \'Space Grotesk\', sans-serif; font-size: 34px; font-weight: 700; display: flex; align-items: center; justify-content: center; transition: transform .15s, box-shadow .15s; ' +
+          (on ? 'background: ' + accent + '; color: #FFFFFF; border: 2px solid ' + accent + '; transform: translateY(-12px); box-shadow: 0 12px 24px rgba(20,23,31,.18)'
+              : 'background: #FFFFFF; color: #14171F; border: 2px solid #CDD2DB; box-shadow: 0 2px 0 #E3E6EC')
+      };
+    });
+
+    var badge = function (done) {
+      return 'font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; ' + (done ? 'background: #E7F6EE; color: #0B6B44' : 'background: #FFF4EC; color: #9A3412');
+    };
+    var myName = s.userName || 'Tú';
+    var participants = [{ name: myName + ' (tú)', initial: myName.charAt(0).toUpperCase(), status: s.reveal ? 'Votó' : 'Pendiente', badgeStyle: badge(s.reveal) }]
+      .concat(BOTS.map(function (b) { return { name: b, initial: b.charAt(0), status: 'Votó', badgeStyle: badge(true) }; }));
+
+    var tagStyle = function (kind) {
+      var m = { done: 'background: #E7F6EE; color: #0B6B44', post: 'background: #FFF4EC; color: #9A3412', now: 'background: #EEF0FC; color: #2A37A8', todo: 'background: #F4F5F8; color: #5A6170' };
+      return 'flex: 0 0 auto; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; ' + m[kind];
+    };
+    var storyStatus = s.stories.map(function (st, i) {
+      var r = s.results[i];
+      if (r) return { folio: st.folio, title: st.title, tag: r.postponed ? 'Pospuesta' : r.points + ' pts', tagStyle: tagStyle(r.postponed ? 'post' : 'done') };
+      if (i === s.idx) return { folio: st.folio, title: st.title, tag: 'Votando', tagStyle: tagStyle('now') };
+      return { folio: st.folio, title: st.title, tag: 'Pendiente', tagStyle: tagStyle('todo') };
+    });
+
+    var minutes = s.duration || 2;
+    var total = s.deadline ? (s.deadlineTotal || minutes * 60000) : minutes * 60000;
+    var remain = s.deadline ? Math.max(0, s.deadline - (s.now || Date.now())) : (s.reveal ? 0 : total);
+    var secs = Math.ceil(remain / 1000);
+    var timeLeft = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    var low = secs <= 30;
+    var timeColor = low ? '#B4441A' : accent;
+
+    var pct = storyCount ? Math.round(doneList.length / storyCount * 100) : 0;
+    var postponedCount = doneList.filter(function (r) { return r.postponed; }).length;
+
+    var resultRows = [];
+    s.stories.forEach((st, i) => {
+      var r = s.results[i];
+      if (!r) return;
+      var confirming = s.confirmDel === i;
+      resultRows.push({
+        title: r.title, folio: r.folio, points: r.points,
+        votesText: (r.votes || []).map(function (v) { return v.name + ' ' + v.v; }).join(' · '),
+        pointsStyle: 'font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; ' + (r.postponed ? 'background: #FFF4EC; color: #9A3412' : 'background: #EEF0FC; color: #2A37A8'),
+        delLabel: confirming ? 'Confirmar' : 'Borrar',
+        delAria: (confirming ? 'Confirmar borrado de ' : 'Borrar votación de ') + r.folio,
+        delStyle: 'flex: 0 0 auto; height: 40px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' + (confirming ? 'background: #B42318; color: #FFFFFF; border: 1px solid #B42318' : 'background: #FFFFFF; color: #B42318; border: 1px solid #E8B4AE'),
+        del: () => {
+          if (s.confirmDel !== i) { this.setState({ confirmDel: i }); return; }
+          var results = s.results.slice(); results[i] = null;
+          var idx = (s.idx >= storyCount || s.results[s.idx]) ? i : s.idx;
+          this.setState({ results: results, idx: idx, confirmDel: null });
+          this.flash('Votación de ' + r.folio + ' borrada');
+        }
+      });
+    });
+    var confirmAll = s.confirmDel === 'all';
+
+    return {
+      accent: accent,
+      hasSession: hasSession, noSession: !hasSession,
+      sessionInput: s.sessionInput, sessionName: s.sessionName, folio: s.folio,
+      storyCount: storyCount, doneCount: doneList.length,
+      clearLabel: confirmAll ? '¿Borrar todas?' : 'Borrar todas',
+      clearStyle: 'height: 36px; padding: 0 12px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; ' + (confirmAll ? 'background: #B42318; color: #FFFFFF; border: 1px solid #B42318' : 'background: transparent; color: #B42318; border: 1px solid transparent'),
+      clearAll: () => {
+        if (!confirmAll) { this.setState({ confirmDel: 'all' }); return; }
+        this.setState({ results: [], idx: 0, myVote: null, reveal: false, deadline: null, deadlineTotal: null, timedOut: false, confirmDel: null });
+        this.flash('Se borraron todas las votaciones');
+      },
+      hasStories: storyCount > 0, fileName: s.fileName, storyRows: s.stories,
+      hasResults: doneList.length > 0, noResults: doneList.length === 0,
+      resultRows: resultRows,
+      statusLabel: !hasSession ? 'Sin sesión' : !storyCount ? 'Esperando historias' : finished ? 'Votación terminada' : 'Votando historia ' + (s.idx + 1),
+      progressStyle: 'height: 100%; width: ' + pct + '%; background: ' + accent + '; border-radius: 999px',
+      adminTabStyle: tab(!isUser), userTabStyle: tab(isUser),
+      showAdmin: !isUser,
+      showLogin: isUser && !s.loggedIn,
+      showWaiting: isUser && s.loggedIn && storyCount === 0,
+      showVoting: isUser && s.loggedIn && storyCount > 0 && !finished,
+      showDone: isUser && s.loggedIn && finished,
+      nameInput: s.nameInput, folioInput: s.folioInput,
+      hasFolioHint: hasSession, hasLoginError: !!s.loginError, loginError: s.loginError,
+      userName: s.userName,
+      current: current, storyNumber: Math.min(s.idx + 1, storyCount),
+      cards: cards, noVote: !s.myVote,
+      voteHint: s.myVote ? 'Tu carta: ' + s.myVote : 'Selecciona una carta para votar',
+      participants: participants, participantCount: participants.length, votedCount: BOTS.length + (s.reveal ? 1 : 0),
+      storyStatus: storyStatus,
+      reveal: s.reveal,
+      timeLeft: timeLeft,
+      timerTextStyle: 'font-family: \'Space Grotesk\', sans-serif; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 56px; color: ' + (low ? '#B4441A' : '#14171F'),
+      timerBarStyle: 'height: 100%; width: ' + Math.min(100, remain / total * 100).toFixed(1) + '%; background: ' + timeColor + '; border-radius: 999px; transition: width 1s linear',
+      timedOut: s.reveal && !!s.timedOut,
+      revealHeader: s.timedOut ? 'Tiempo agotado' : 'Todos votaron',
+      durationLabel: minutes + ' min',
+      durationOptions: DURATIONS.map((m) => {
+        var on = m === minutes;
+        return {
+          label: m + ' min', pressed: on ? 'true' : 'false',
+          pick: () => { this.setState({ duration: m }); this.flash('Tiempo por historia: ' + m + ' min'); },
+          style: 'height: 44px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ' +
+            (on ? 'background: ' + accent + '; color: #FFFFFF; border: 1px solid ' + accent : 'background: #FFFFFF; color: #3D4350; border: 1px solid #CDD2DB')
+        };
+      }),
+      revealVotes: [{ name: myName, v: s.myVote || '?' }].concat(BOTS.map(function (b, i) { return { name: b, v: botVotes[i] }; })),
+      isPostponed: s.reveal && stats.postponed, isEstimated: s.reveal && !stats.postponed, stats: stats,
+      nextLabel: doneList.length + 1 >= storyCount ? 'Ver resultados' : 'Siguiente historia',
+      estimatedCount: doneList.length - postponedCount, postponedCount: postponedCount,
+      hasToast: !!s.toast, toast: s.toast,
+
+      toAdmin: () => this.setState({ role: 'admin' }),
+      toUser: () => this.setState({ role: 'user' }),
+      onSessionInput: (e) => this.setState({ sessionInput: e.target.value }),
+      createSession: () => {
+        var folio = 'SP-' + String(Math.floor(1000 + Math.random() * 9000));
+        this.setState({ sessionName: s.sessionInput.trim() || 'Sesión de planning', folio: folio, stories: [], fileName: '', idx: 0, results: [], myVote: null, reveal: false, deadline: null, timedOut: false });
+        this.flash('Sesión creada · folio ' + folio);
+      },
+      resetAll: () => { var f = freshState(); f.duration = minutes; this.setState(f); this.flash('Sesión cerrada'); },
+      onFile: (e) => this.handleFile(e),
+      download: () => this.downloadReport(),
+      onNameInput: (e) => this.setState({ nameInput: e.target.value, loginError: '' }),
+      onFolioInput: (e) => this.setState({ folioInput: e.target.value, loginError: '' }),
+      login: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        var name = s.nameInput.trim();
+        var f = s.folioInput.trim().toUpperCase();
+        if (!name) return this.setState({ loginError: 'Escribe tu nombre.' });
+        if (!f) return this.setState({ loginError: 'Escribe el folio de la sesión.' });
+        if (!s.folio || f !== s.folio) return this.setState({ loginError: 'No hay una sesión activa con el folio ' + f + '.' });
+        this.setState({ userName: name, loggedIn: true, loginError: '' });
+      },
+      submitVote: () => { if (s.myVote) this.setState({ reveal: true, deadline: null, deadlineTotal: null, timedOut: false }); },
+      nextStory: () => {
+        var st = computeStats(allVotes);
+        var votes = [{ name: myName, v: s.myVote || '?' }].concat(BOTS.map(function (b, i) { return { name: b, v: botVotes[i] }; }));
+        var row = { title: current.title, folio: current.folio, points: st.postponed ? 'Pospuesta' : st.final, postponed: st.postponed, votes: votes };
+        var results = s.results.slice(); results[s.idx] = row;
+        var next = s.stories.findIndex(function (_, i) { return !results[i]; });
+        this.setState({ results: results, idx: next === -1 ? storyCount : next, confirmDel: null, myVote: null, reveal: false, deadline: null, deadlineTotal: null, timedOut: false });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
