@@ -60,6 +60,11 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
   .trk-chart { position: relative; min-height: 240px; }
   .trk-map { min-height: 300px; }
   .trk-chart.trk-map svg { overflow: hidden; }
+  .trk-lf { width: 100%; border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); z-index: 0; }
+  .trk-pin { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font: 600 11px/1 var(--font-anthropic-sans); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); box-sizing: border-box; }
+  .trk-mapnote { margin: var(--cds-gap-sm) 0 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .trk-maplink { color: inherit; font-size: var(--cds-font-size-caption); white-space: nowrap; }
+  .leaflet-popup-content { font-family: var(--font-anthropic-sans); font-size: 13px; line-height: 1.45; }
   .trk-chart svg { display: block; overflow: visible; }
   .trk-chart text { font-family: var(--font-anthropic-sans); }
   .trk-chart .tick text { fill: var(--cds-text-secondary); font-size: var(--cds-font-size-caption); }
@@ -147,6 +152,7 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
         <li><i class="trk-sw-line" data-sw="route"></i>Trayecto</li>
       </ul>
       <div class="trk-chart trk-map" id="trk-map" data-draw="trk-map"></div>
+      <p class="trk-mapnote" id="trk-mapnote" hidden>No se pudo cargar el mapa de calles, así que el trayecto se dibuja sin fondo: el visor de artefactos de claude.ai no lo permite, y fuera de él hace falta internet. Cada parada tiene en la tabla un enlace para verla en Google Maps. Abierta desde GitHub Pages o como archivo en tu computadora, con internet, la página muestra el mapa de OpenStreetMap.</p>
     </section>
 
     <section class="trk-card" id="trk-speedcard">
@@ -160,7 +166,7 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
       <p class="trk-empty" id="trk-nostops" hidden>No se detectaron paradas entre el origen y el destino.</p>
       <div class="trk-tablewrap" id="trk-stopstable">
         <table class="trk-table">
-          <thead><tr><th>#</th><th>Hora</th><th>Lugar</th><th>Duración</th><th>Frenado</th><th>Tipo</th></tr></thead>
+          <thead><tr><th>#</th><th>Hora</th><th>Lugar</th><th>Duración</th><th>Frenado</th><th>Tipo</th><th>Mapa</th></tr></thead>
           <tbody data-draw="trk-stops-rows"></tbody>
         </table>
       </div>
@@ -175,7 +181,7 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
         <li>Frenado: la mayor caída de velocidad por segundo antes de detenerse, en m/s².</li>
         <li>Salida es el primer momento en que el camión se mueve; llegada, cuando se detiene por última vez. El tiempo de origen a destino va de una a otra.</li>
         <li>Si el archivo no trae velocidad, se calcula con la distancia y el tiempo entre puntos GPS.</li>
-        <li>El mapa no tiene fondo de calles: muestra el trazo, las paradas y los lugares del archivo.</li>
+        <li>El mapa de calles es de OpenStreetMap y necesita internet. Si no se puede cargar, el trayecto se dibuja sin fondo.</li>
       </ul>
     </details>
   </div>
@@ -721,10 +727,90 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
     });
   }
 
+  /* ---------- Mapa de calles (OpenStreetMap + Leaflet) ---------- */
+  // Se intenta cargar un mosaico de OpenStreetMap. Donde el visor lo bloquea
+  // (por ejemplo, en un artefacto de claude.ai) se usa el dibujo sin fondo.
+  const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const LEAFLET = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
+  window.TRK_BASEMAP = 'pending';
+  (function probe() {
+    let done = false;
+    const fin = (ok) => {
+      if (done) return; done = true;
+      if (!ok) { window.TRK_BASEMAP = 'no'; dash.draw('trk-map'); return; }
+      const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = LEAFLET + 'leaflet.min.css';
+      const js = document.createElement('script'); js.src = LEAFLET + 'leaflet.min.js';
+      const loaded = (node) => new Promise((res, rej) => { node.onload = res; node.onerror = rej; });
+      Promise.all([loaded(css), loaded(js)]).then(() => {
+        window.TRK_BASEMAP = window.L && window.L.map ? 'ok' : 'no'; dash.draw('trk-map');
+      }, () => { window.TRK_BASEMAP = 'no'; dash.draw('trk-map'); });
+      document.head.appendChild(css); document.head.appendChild(js);
+    };
+    try {
+      const img = new Image();
+      img.onload = () => fin(img.naturalWidth > 0);
+      img.onerror = () => fin(false);
+      setTimeout(() => fin(false), 6000);
+      img.src = TILE_URL.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0');
+    } catch (e) { fin(false); }
+  })();
+
+  const resolveColor = (c) => {
+    if (!/^var\(/.test(c)) return c;
+    const t = document.createElement('span'); t.style.color = c; document.body.appendChild(t);
+    const v = getComputedStyle(t).color; t.remove(); return v || '#2a78d6';
+  };
+  const textNode = (lines) => {
+    const d = document.createElement('div');
+    lines.forEach(([b, rest], i) => {
+      if (i) d.appendChild(document.createElement('br'));
+      if (b) { const e = document.createElement('b'); e.textContent = b; d.appendChild(e); }
+      if (rest) d.appendChild(document.createTextNode((b ? ' ' : '') + rest));
+    });
+    return d;
+  };
+
+  function streetMap(el, r) {
+    const LF = window.L;
+    if (el._lf && el._lfRes === r) { el._lf.invalidateSize(); return; }
+    if (el._lf) { el._lf.remove(); el._lf = null; }
+    el.replaceChildren();
+    const H = Math.round(Math.max(320, Math.min(560, el.clientWidth * 0.62)));
+    const box = document.createElement('div'); box.className = 'trk-lf'; box.style.height = H + 'px';
+    box.setAttribute('role', 'region'); box.setAttribute('aria-label', `Mapa del trayecto de ${r.origin} a ${r.dest} con ${r.stops.length} paradas`);
+    el.appendChild(box);
+    const map = LF.map(box, { scrollWheelZoom: false });
+    LF.tileLayer(TILE_URL, { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(map);
+    const ll = r.pts.map((p) => [p.lat, p.lon]);
+    const line = LF.polyline(ll, { color: resolveColor(dash.colors[0]), weight: 4, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+    LF.circleMarker(ll[0], { radius: 8, color: '#141413', weight: 3, fillColor: '#ffffff', fillOpacity: 1 })
+      .bindTooltip(textNode([['Origen', r.origin], [null, 'Salida ' + L.when(r, r.dep)]])).addTo(map);
+    LF.circleMarker(ll[ll.length - 1], { radius: 8, color: '#ffffff', weight: 2, fillColor: '#141413', fillOpacity: 1 })
+      .bindTooltip(textNode([['Destino', r.dest], [null, 'Llegada ' + L.when(r, r.arr)]])).addTo(map);
+    for (const s of r.stops) {
+      const col = resolveColor(L.color(s.type));
+      const icon = LF.divIcon({ className: '', html: '<span class="trk-pin" style="background:' + col + '">' + s.n + '</span>', iconSize: [22, 22], iconAnchor: [11, 11] });
+      const info = [
+        ['Parada ' + s.n, s.type === 'brusca' ? '· brusca' : '· normal'],
+        [null, (s.place ? s.place + ' · ' : '') + L.when(r, s.start) + ' a ' + L.when(r, s.end)],
+        [null, 'Duración ' + L.dur(s.dur * 1000) + (s.decel != null ? ' · frenado ' + L.f1(s.decel) + ' m/s²' : '')]
+      ];
+      LF.marker([s.lat, s.lon], { icon, title: 'Parada ' + s.n, zIndexOffset: 1000 })
+        .bindTooltip(textNode(info), { direction: 'top', offset: [0, -10] })
+        .bindPopup(textNode(info)).addTo(map);
+    }
+    map.fitBounds(line.getBounds(), { padding: [30, 30], maxZoom: 16 });
+    el._lf = map; el._lfRes = r;
+  }
+
   /* ---------- Mapa ---------- */
   dash.draw('trk-map', (el) => {
+    const r = R();
+    document.querySelectorAll('#trk-mapnote').forEach((n) => { n.hidden = !(r && window.TRK_BASEMAP === 'no'); });
+    if (r && window.TRK_BASEMAP === 'ok') { try { streetMap(el, r); return; } catch (e) { window.TRK_BASEMAP = 'no'; } }
+    if (el._lf) { el._lf.remove(); el._lf = null; el._lfRes = null; }
     el.replaceChildren();
-    const r = R(); if (!r) { el.textContent = '—'; return; }
+    if (!r) { el.textContent = '—'; return; }
     const W = Math.max(260, el.clientWidth);
     const H = Math.round(Math.max(300, Math.min(520, W * 0.62)));
     const pad = 28;
@@ -936,6 +1022,7 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
       td(L.dur(s.dur * 1000));
       td(s.decel == null ? '—' : L.f1(s.decel) + ' m/s²' + (s.evHarsh ? ' · alerta' : ''));
       const b = document.createElement('span'); b.className = 'trk-badge trk-badge-' + s.type; b.textContent = s.type === 'brusca' ? 'Brusca' : 'Normal'; td(b);
+      const a = document.createElement('a'); a.className = 'trk-maplink'; a.href = 'https://www.google.com/maps?q=' + s.lat.toFixed(6) + ',' + s.lon.toFixed(6); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Ver en Google Maps'; td(a);
       tb.appendChild(tr);
     }
   });
