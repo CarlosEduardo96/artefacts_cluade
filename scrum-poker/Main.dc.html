@@ -151,7 +151,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </sc-if>
 <button type="button" onClick="{{download}}" disabled="{{noResults}}" style="height: 44px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
-Descargar reporte (Excel)
+Exportar reporte (Excel)
 </button>
 </section>
 
@@ -277,7 +277,7 @@ Descargar reporte (Excel)
 </div>
 <button type="button" onClick="{{download}}" style="align-self: center; height: 48px; padding: 0 28px; border: 0; border-radius: 10px; background: #14171F; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>
-Descargar reporte (Excel)
+Exportar reporte (Excel)
 </button>
 </div>
 </sc-if>
@@ -331,6 +331,23 @@ Descargar reporte (Excel)
 </div>
 </sc-if>
 
+<sc-if value="{{showReport}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: rgba(20,23,31,.5); display: flex; justify-content: center; align-items: flex-start; padding: 96px 16px 32px; box-sizing: border-box">
+<div role="dialog" aria-modal="true" aria-labelledby="rep-title" style="width: 100%; max-width: 640px; background: #FFFFFF; border-radius: 18px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 24px 60px rgba(20,23,31,.25)">
+<div>
+<h2 id="rep-title" style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px">Reporte de la sesión {{folio}}</h2>
+<p style="margin: 6px 0 0; font-size: 14px; color: #5A6170">Pulsa «Copiar reporte» y pégalo en la celda A1 de una hoja de Excel: cada dato cae en su columna (Historia de usuario, Folio, Dificultad).</p>
+</div>
+<label for="rep-text" style="font-size: 13px; font-weight: 600; color: #3D4350">Contenido del reporte</label>
+<textarea id="rep-text" readonly="readonly" ref="{{reportRef}}" onFocus="{{selectReport}}" value="{{reportText}}" style="width: 100%; box-sizing: border-box; height: 220px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 10px 12px; font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; color: #14171F; resize: vertical; white-space: pre; overflow: auto"></textarea>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end">
+<button type="button" onClick="{{closeReport}}" style="height: 44px; padding: 0 20px; border: 1px solid #CDD2DB; border-radius: 10px; background: #FFFFFF; color: #3D4350; font: inherit; font-weight: 600; cursor: pointer">Cerrar</button>
+<button type="button" onClick="{{copyReport}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); background: #14171F; color: #FFFFFF; border-radius: 10px; padding: 12px 18px; font-size: 14px">{{toast}}</div>
 </sc-if>
@@ -357,7 +374,7 @@ var DURATIONS = [1, 2, 3, 5, 10];
 function freshState() {
   return { role: 'admin', sessionInput: 'Sprint 14 · Planning', sessionName: '', folio: '', stories: [], fileName: '',
     nameInput: '', folioInput: '', loginError: '', userName: '', loggedIn: false,
-    idx: 0, myVote: null, reveal: false, results: [], toast: '', deadline: null, deadlineTotal: null, now: 0, timedOut: false, duration: 2, confirmDel: null };
+    idx: 0, myVote: null, reveal: false, results: [], toast: '', deadline: null, deadlineTotal: null, now: 0, timedOut: false, duration: 2, confirmDel: null, showReport: false, copied: false };
 }
 
 function computeStats(votes) {
@@ -447,18 +464,35 @@ class Component extends DCLogic {
     e.target.value = '';
   }
 
-  downloadReport() {
+  reportText() {
     var st = this.state;
+    var cell = function (c) { return String(c == null ? '' : c).replace(/[\t\r\n]+/g, ' '); };
     var rows = [['Historia de usuario', 'Folio', 'Dificultad']].concat(st.results.filter(Boolean).map(function (r) { return [r.title, r.folio, r.points]; }));
-    var csv = '﻿' + rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+    return rows.map(function (r) { return r.map(cell).join('\t'); }).join('\n');
+  }
+
+  downloadReport() {
+    this.setState({ showReport: true, copied: false });
+  }
+
+  copyReport() {
+    var text = this.reportText();
+    var done = () => { this.setState({ copied: true }); this.flash('Reporte copiado: pégalo en Excel'); };
+    var fallback = () => {
+      var ta = this._reportEl;
+      try {
+        if (ta) { ta.focus(); ta.select(); }
+        if (document.execCommand && document.execCommand('copy')) { done(); return; }
+      } catch (e) {}
+      this.flash('Selecciona el texto y pulsa Ctrl+C (Cmd+C en Mac)');
+    };
     try {
-      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      var a = document.createElement('a');
-      a.href = url; a.download = 'reporte-' + (st.folio || 'sesion') + '.csv';
-      a.click();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+        return;
+      }
     } catch (e) {}
-    this.flash('Reporte descargado');
+    fallback();
   }
 
   doLogin() {
@@ -616,6 +650,13 @@ class Component extends DCLogic {
       resetAll: () => { var f = freshState(); f.duration = minutes; this.setState(f); this.flash('Sesión cerrada'); },
       onFile: (e) => this.handleFile(e),
       download: () => this.downloadReport(),
+      showReport: !!s.showReport,
+      reportText: s.showReport ? this.reportText() : '',
+      reportRef: (el) => { this._reportEl = el; },
+      selectReport: (e) => { try { e.target.select(); } catch (err) {} },
+      copyReport: () => this.copyReport(),
+      closeReport: () => this.setState({ showReport: false, copied: false }),
+      copyLabel: s.copied ? 'Copiado' : 'Copiar reporte',
       onNameInput: (e) => this.setState({ nameInput: e.target.value, loginError: '' }),
       onFolioInput: (e) => this.setState({ folioInput: e.target.value, loginError: '' }),
       login: () => this.doLogin(),
