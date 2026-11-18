@@ -1,0 +1,949 @@
+<!DOCTYPE html><html lang="es-MX"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recorrido del camión</title><style>
+:root{--color-fg:#141413;--color-fg-muted:#5e5d59;--color-bg:#fff;--color-panel:#fff;--color-border-line:#e3e1db;--color-ok:#1b8a5a;--color-warn:#9a5b00;--color-bad:#c0392b;
+--cds-chart-status-critical:#d03b3b;--cds-chart-grid:#ecebe6;--cds-chart-axis:#c9c7c0;--cds-chart-reference:#8f8d86;--cds-text-secondary:#5e5d59;--cds-surface-popover:#fff;--cds-border:#d9d7d0;--cds-shadow-popover:0 4px 14px rgba(0,0,0,.12);
+--cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:12px;--cds-gap-lg:20px;--cds-pad-md:12px;--cds-pad-lg:16px;--cds-pad-xl:24px;--cds-radius:10px;--cds-font-size-caption:12px;--cds-font-size-body:14px;--cds-font-size-heading:16px;--cds-font-size-title:28px;--cds-font-weight-medium:500;
+--font-anthropic-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-anthropic-serif:Georgia,"Times New Roman",serif}
+body{margin:0;background:#f7f6f2} #dash-root{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+.dash-select{font:inherit;padding:4px 8px;border:1px solid var(--color-border-line);border-radius:6px;background-color:#fff}
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+window.__draws={};
+window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
+ draw(name,fn){ if(fn){ __draws[name]=fn; return; } const f=__draws[name]; if(!f) return;
+  document.querySelectorAll('[data-draw="'+name+'"]').forEach(el=>{ if(el.closest('[hidden]')) return; try{f(el)}catch(e){console.error(name,e)} }); },
+ onData(){}, data(){return {status:'ok',data:[]}} };
+</script></head><body><div id="dash-root">
+<meta name="dash-one-writer">
+<style>
+  .trk { display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
+  .trk-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); }
+  .trk-lede { margin: 0; color: var(--color-fg-muted); max-width: 62ch; }
+  .trk-lede b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+  .trk-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  .trk-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+  .trk-sub { margin: 0 0 var(--cds-gap-md); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .trk-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--cds-gap-sm); text-align: center; min-height: 260px; border: 1.5px dashed var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xl); background: var(--color-panel); }
+  .trk-drop.trk-over { border-color: var(--color-fg-muted); }
+  .trk-drop p { margin: 0; }
+  .trk-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .trk-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border-radius: var(--cds-radius); padding: 10px 18px; background: var(--color-fg); color: var(--color-bg); font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-body); user-select: none; }
+  .trk-btn:hover { opacity: .88; }
+  .trk-file-input:focus-visible + .trk-btn, .trk-file-input:focus-visible ~ .trk-bar-actions .trk-btn-ghost { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  .trk-btn-ghost { cursor: pointer; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 6px 12px; font-size: var(--cds-font-size-caption); background: var(--color-panel); white-space: nowrap; }
+  .trk-btn-ghost:hover { border-color: var(--color-fg-muted); }
+  .trk-hint, .trk-private { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .trk-private { max-width: 46ch; }
+  .trk-err { margin: 0; color: var(--color-bad); }
+  .trk-err:empty { display: none; }
+  .trk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm) var(--cds-gap-md); }
+  .trk-bar-file { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-width: 0; overflow-wrap: anywhere; flex: 1 1 200px; }
+  .trk-bar-file b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+  .trk-bar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
+  .trk-truckpick { display: flex; align-items: center; gap: 8px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .trk-cols { font-size: var(--cds-font-size-caption); }
+  .trk-cols summary { cursor: pointer; color: var(--color-fg-muted); }
+  .trk-cols-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-md); margin-top: var(--cds-gap-sm); }
+  .trk-cols-grid label { display: flex; flex-direction: column; gap: 4px; color: var(--color-fg-muted); }
+  .trk-cols-grid select { width: 100%; }
+  .trk-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--cds-gap-md); }
+  .trk-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); min-width: 0; }
+  .trk-kpi-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0 0 4px; }
+  .trk-kpi-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 1.55rem; line-height: 1.2; margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .trk-kpi-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 4px 0 0; font-variant-numeric: tabular-nums; }
+  .trk-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 var(--cds-gap-sm); padding: 0; list-style: none; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .trk-legend li { display: inline-flex; align-items: center; gap: 6px; }
+  .trk-sw { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 2px solid var(--color-panel); box-shadow: 0 0 0 1px var(--color-border-line); }
+  .trk-sw-line { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+  .trk-sw-origin { background: var(--color-panel); box-shadow: 0 0 0 2px var(--color-fg); }
+  .trk-sw-dest { background: var(--color-fg); }
+  .trk-chart { position: relative; min-height: 240px; }
+  .trk-map { min-height: 300px; }
+  .trk-chart.trk-map svg { overflow: hidden; }
+  .trk-chart svg { display: block; overflow: visible; }
+  .trk-chart text { font-family: var(--font-anthropic-sans); }
+  .trk-chart .tick text { fill: var(--cds-text-secondary); font-size: var(--cds-font-size-caption); }
+  .trk-chart .tick line { stroke: var(--cds-chart-grid); }
+  .trk-chart .domain { stroke: var(--cds-chart-axis); }
+  .trk-maplabel { font-size: 12px; fill: var(--color-fg); paint-order: stroke; stroke: var(--color-panel); stroke-width: 3.5px; stroke-linejoin: round; }
+  .trk-maplabel.trk-strong { font-weight: 600; }
+  .trk-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: var(--cds-radius); padding: 6px 10px; font-size: var(--cds-font-size-caption); line-height: 1.45; white-space: nowrap; z-index: 2; }
+  .trk-tip b { font-weight: var(--cds-font-weight-medium); }
+  .trk-tip span { color: var(--cds-text-secondary); }
+  .trk-tablewrap { overflow-x: auto; }
+  .trk-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+  .trk-table th { text-align: left; font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: 6px 10px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  .trk-table td { padding: 8px 10px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  .trk-table td.trk-place { white-space: normal; min-width: 140px; }
+  .trk-table tr:last-child td { border-bottom: 0; }
+  .trk-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 600; }
+  .trk-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--cds-font-size-caption); border: 1px solid var(--color-border-line); }
+  .trk-badge-brusca { color: var(--color-bad); border-color: currentColor; }
+  .trk-note { margin: var(--cds-gap-sm) 0 0; color: var(--color-warn); font-size: var(--cds-font-size-caption); }
+  .trk-empty { margin: 0; color: var(--color-fg-muted); }
+  .trk-howto summary { cursor: pointer; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .trk-howto ul { margin: var(--cds-gap-sm) 0 0; padding-left: 1.2em; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); display: grid; gap: 4px; }
+  .trk[hidden], .trk [hidden] { display: none !important; }
+  @media print { .trk-drop, .trk-bar-actions, .trk-cols { display: none !important; } }
+</style>
+
+<div class="trk" id="trk-root">
+  <header>
+    <h1 class="trk-title" id="trk-title">Recorrido del camión</h1>
+    <p class="trk-lede" id="trk-lede-empty">Carga el Excel o CSV con los registros GPS del camión para ver dónde se paró, cómo frenó y cuánto tardó de origen a destino.</p>
+    <p class="trk-lede" id="trk-lede" hidden>El camión <b data-draw="s-truck">—</b> fue de <b data-draw="s-origin">—</b> a <b data-draw="s-dest">—</b> en <b data-draw="s-dur">—</b>, con <b data-draw="s-stops">—</b> (<span data-draw="s-harsh">—</span>).</p>
+  </header>
+
+  <input type="file" id="trk-file" class="trk-file-input" accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+
+  <section id="trk-upload" class="trk-drop" aria-label="Cargar archivo">
+    <label for="trk-file" class="trk-btn">Cargar Excel (.xlsx) o CSV</label>
+    <p class="trk-hint">o arrastra el archivo aquí</p>
+    <p class="trk-private">El archivo se lee en tu navegador: no se sube ni se guarda en el tablero, y nadie más lo ve.</p>
+  </section>
+
+  <section id="trk-bar" class="trk-bar" hidden>
+    <p class="trk-bar-file" id="trk-filename">Archivo: <b data-draw="trk-fname">—</b> · <span data-draw="trk-rows">—</span></p>
+    <div class="trk-bar-actions">
+      <label class="trk-truckpick" id="trk-truckpick" hidden>Camión <select class="dash-select" data-draw="trk-truck" aria-label="Camión"></select></label>
+      <label for="trk-file" class="trk-btn-ghost">Cargar otro archivo</label>
+    </div>
+  </section>
+
+  <p class="trk-err" data-draw="trk-error" role="alert"></p>
+
+  <details class="trk-cols" id="trk-cols" hidden>
+    <summary>Columnas del archivo</summary>
+    <div class="trk-cols-grid">
+      <label>Latitud<select class="dash-select" data-draw="trk-colsel" data-role="lat"></select></label>
+      <label>Longitud<select class="dash-select" data-draw="trk-colsel" data-role="lon"></select></label>
+      <label>Fecha y hora<select class="dash-select" data-draw="trk-colsel" data-role="time"></select></label>
+      <label>Hora (si va aparte)<select class="dash-select" data-draw="trk-colsel" data-role="clock"></select></label>
+      <label>Velocidad (km/h)<select class="dash-select" data-draw="trk-colsel" data-role="speed"></select></label>
+      <label>Camión<select class="dash-select" data-draw="trk-colsel" data-role="truck"></select></label>
+      <label>Ciudad o lugar<select class="dash-select" data-draw="trk-colsel" data-role="place"></select></label>
+      <label>Evento o alerta<select class="dash-select" data-draw="trk-colsel" data-role="event"></select></label>
+    </div>
+  </details>
+
+  <div id="trk-report" class="trk" hidden>
+    <section class="trk-kpis" id="trk-kpis" aria-label="Resumen del viaje">
+      <div class="trk-kpi" id="kpi-truck"><p class="trk-kpi-label">Camión</p><p class="trk-kpi-value" data-draw="k-truck">—</p></div>
+      <div class="trk-kpi" id="kpi-origin"><p class="trk-kpi-label">Origen</p><p class="trk-kpi-value" data-draw="k-origin">—</p><p class="trk-kpi-note">Salida <span data-draw="k-dep">—</span></p></div>
+      <div class="trk-kpi" id="kpi-dest"><p class="trk-kpi-label">Destino</p><p class="trk-kpi-value" data-draw="k-dest">—</p><p class="trk-kpi-note">Llegada <span data-draw="k-arr">—</span></p></div>
+      <div class="trk-kpi" id="kpi-dur"><p class="trk-kpi-label">Tiempo de origen a destino</p><p class="trk-kpi-value" data-draw="k-dur">—</p><p class="trk-kpi-note"><span data-draw="k-moving">—</span> en movimiento</p></div>
+      <div class="trk-kpi" id="kpi-dist"><p class="trk-kpi-label">Distancia recorrida</p><p class="trk-kpi-value" data-draw="k-dist">—</p><p class="trk-kpi-note">Máx. <span data-draw="k-vmax">—</span></p></div>
+      <div class="trk-kpi" id="kpi-stops"><p class="trk-kpi-label">Paradas</p><p class="trk-kpi-value" data-draw="k-stops">—</p><p class="trk-kpi-note"><span data-draw="k-normal">—</span> · <span data-draw="k-harsh">—</span></p></div>
+    </section>
+
+    <section class="trk-card" id="trk-mapcard">
+      <h2>Dónde se paró el camión</h2>
+      <p class="trk-sub">Trayecto trazado con los puntos GPS del archivo. Pasa el cursor sobre una parada para ver sus detalles.</p>
+      <ul class="trk-legend">
+        <li><i class="trk-sw trk-sw-origin"></i>Origen</li>
+        <li><i class="trk-sw trk-sw-dest"></i>Destino</li>
+        <li><i class="trk-sw" data-sw="normal"></i>Parada normal</li>
+        <li><i class="trk-sw" data-sw="brusca"></i>Parada brusca</li>
+        <li><i class="trk-sw-line" data-sw="route"></i>Trayecto</li>
+      </ul>
+      <div class="trk-chart trk-map" id="trk-map" data-draw="trk-map"></div>
+    </section>
+
+    <section class="trk-card" id="trk-speedcard">
+      <h2>Velocidad a lo largo del viaje</h2>
+      <p class="trk-sub">Km/h en cada registro. Las franjas marcan las paradas, con su número.</p>
+      <div class="trk-chart" id="trk-speed" data-draw="trk-speed"></div>
+    </section>
+
+    <section class="trk-card" id="trk-stopscard">
+      <h2>Paradas</h2>
+      <p class="trk-empty" id="trk-nostops" hidden>No se detectaron paradas entre el origen y el destino.</p>
+      <div class="trk-tablewrap" id="trk-stopstable">
+        <table class="trk-table">
+          <thead><tr><th>#</th><th>Hora</th><th>Lugar</th><th>Duración</th><th>Frenado</th><th>Tipo</th></tr></thead>
+          <tbody data-draw="trk-stops-rows"></tbody>
+        </table>
+      </div>
+      <p class="trk-note" id="trk-caveat" hidden>El archivo registra un punto cada <b data-draw="trk-interval">—</b> en promedio; con esa separación un frenado brusco puede verse como normal.</p>
+    </section>
+
+    <details class="trk-howto" id="trk-howto">
+      <summary>Cómo se calcula</summary>
+      <ul>
+        <li>Parada: el camión va a <span data-draw="c-stopkmh">—</span> km/h o menos durante al menos <span data-draw="c-stopmin">—</span> minuto. No cuentan la espera antes de salir ni la que hay al llegar.</li>
+        <li>Parada brusca: en los <span data-draw="c-window">—</span> segundos previos la velocidad cae <span data-draw="c-harsh">—</span> m/s² o más (unos <span data-draw="c-harshkmh">—</span> km/h por segundo), o el archivo marca un frenado brusco en la columna de eventos. Las demás son normales.</li>
+        <li>Frenado: la mayor caída de velocidad por segundo antes de detenerse, en m/s².</li>
+        <li>Salida es el primer momento en que el camión se mueve; llegada, cuando se detiene por última vez. El tiempo de origen a destino va de una a otra.</li>
+        <li>Si el archivo no trae velocidad, se calcula con la distancia y el tiempo entre puntos GPS.</li>
+        <li>El mapa no tiene fondo de calles: muestra el trazo, las paradas y los lugares del archivo.</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<script>
+/* Lectura del archivo, solo en el navegador. Nada se sube ni se guarda. */
+(function () {
+  const L = {};
+  L.STOP_KMH = 3;          // a esta velocidad o menos, detenido
+  L.STOP_KMH_GPS = 5;      // si la velocidad sale del GPS (más ruido)
+  L.MIN_STOP_S = 60;       // duración mínima de una parada
+  L.HARSH_MS2 = 3.0;       // desaceleración de frenado brusco
+  L.APPROACH_S = 120;      // ventana antes de la parada
+  L.SPARSE_S = 15;         // intervalo a partir del cual el frenado no se mide bien
+
+  async function unzip(buf) {
+    const dv = new DataView(buf);
+    let e = -1;
+    for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    }
+    if (e < 0) throw new Error('El archivo no parece un Excel .xlsx válido.');
+    const n = dv.getUint16(e + 10, true);
+    let off = dv.getUint32(e + 16, true);
+    const files = {};
+    const td = new TextDecoder();
+    for (let k = 0; k < n; k++) {
+      if (dv.getUint32(off, true) !== 0x02014b50) break;
+      const method = dv.getUint16(off + 10, true), csize = dv.getUint32(off + 20, true);
+      const nlen = dv.getUint16(off + 28, true), xlen = dv.getUint16(off + 30, true), clen = dv.getUint16(off + 32, true);
+      const lho = dv.getUint32(off + 42, true);
+      const name = td.decode(new Uint8Array(buf, off + 46, nlen));
+      files[name] = { method, csize, lho };
+      off += 46 + nlen + xlen + clen;
+    }
+    async function get(name) {
+      const f = files[name];
+      if (!f) return null;
+      const start = f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true);
+      const data = new Uint8Array(buf, start, f.csize);
+      if (f.method === 0) return td.decode(data);
+      if (f.method === 8) {
+        if (typeof DecompressionStream === 'undefined') throw new Error('Este navegador no puede abrir .xlsx; guarda el archivo como CSV.');
+        const s = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return await new Response(s).text();
+      }
+      throw new Error('Formato de compresión no compatible; guarda el archivo como CSV.');
+    }
+    return { names: Object.keys(files), get };
+  }
+
+  function colIdx(ref) {
+    const m = /^([A-Z]+)/.exec(ref); if (!m) return 0;
+    let n = 0; for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  }
+
+  async function readXlsx(buf) {
+    const z = await unzip(buf);
+    const P = new DOMParser();
+    const xml = async (n) => { const t = await z.get(n); return t ? P.parseFromString(t, 'application/xml') : null; };
+    const ss = [];
+    const sst = await xml('xl/sharedStrings.xml');
+    if (sst) for (const si of sst.getElementsByTagName('si')) {
+      let s = ''; for (const t of si.getElementsByTagName('t')) s += t.textContent; ss.push(s);
+    }
+    let sheetPath = null;
+    const wb = await xml('xl/workbook.xml'), rels = await xml('xl/_rels/workbook.xml.rels');
+    if (wb && rels) {
+      const sh = wb.getElementsByTagName('sheet')[0];
+      if (sh) {
+        const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+        for (const r of rels.getElementsByTagName('Relationship')) {
+          if (r.getAttribute('Id') === rid) {
+            let t = r.getAttribute('Target') || '';
+            t = t.startsWith('/') ? t.slice(1) : 'xl/' + t.replace(/^\.\//, '');
+            sheetPath = t;
+          }
+        }
+      }
+    }
+    if (!sheetPath || !z.names.includes(sheetPath)) {
+      sheetPath = z.names.filter((n) => /^xl\/worksheets\/sheet\d*\.xml$/.test(n)).sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
+    }
+    if (!sheetPath) throw new Error('No encontré ninguna hoja en el Excel.');
+    const dateStyles = new Set();
+    const st = await xml('xl/styles.xml');
+    if (st) {
+      const custom = {};
+      for (const f of st.getElementsByTagName('numFmt')) custom[f.getAttribute('numFmtId')] = f.getAttribute('formatCode') || '';
+      const xfs = st.getElementsByTagName('cellXfs')[0];
+      if (xfs) {
+        let i = 0;
+        for (const xf of xfs.getElementsByTagName('xf')) {
+          const id = +xf.getAttribute('numFmtId');
+          const code = (custom[id] || '').replace(/\[[^\]]*\]|"[^"]*"|\\./g, '');
+          if ((id >= 14 && id <= 22) || (id >= 45 && id <= 47) || /[dyhs]|m{1,5}/i.test(code) && !/^[#0.,%E+\-\s]*$/.test(code)) dateStyles.add(i);
+          i++;
+        }
+      }
+    }
+    const doc = await xml(sheetPath);
+    const grid = [];
+    for (const row of doc.getElementsByTagName('row')) {
+      const r = +row.getAttribute('r') - 1;
+      const arr = [];
+      let ci = 0;
+      for (const c of row.getElementsByTagName('c')) {
+        const ref = c.getAttribute('r'); if (ref) ci = colIdx(ref);
+        const t = c.getAttribute('t'), s = +(c.getAttribute('s') || 0);
+        const v = c.getElementsByTagName('v')[0];
+        let val = null;
+        if (t === 's') val = v ? (ss[+v.textContent] ?? '') : '';
+        else if (t === 'inlineStr') val = [...c.getElementsByTagName('t')].map((x) => x.textContent).join('');
+        else if (t === 'str' || t === 'e' || t === 'd') val = v ? v.textContent : null;
+        else if (t === 'b') val = v ? v.textContent === '1' : null;
+        else if (v) { const num = +v.textContent; val = dateStyles.has(s) ? { serial: num } : num; }
+        arr[ci] = val; ci++;
+      }
+      grid[Number.isFinite(r) && r >= 0 ? r : grid.length] = arr;
+    }
+    return grid.filter(Boolean);
+  }
+
+  function decodeText(buf) {
+    let t = new TextDecoder('utf-8').decode(buf);
+    if (t.includes('\uFFFD')) { try { t = new TextDecoder('windows-1252').decode(buf); } catch (e) {} }
+    return t.replace(/^\uFEFF/, '');
+  }
+
+  function parseCSV(text) {
+    const first = text.split(/\r?\n/).find((l) => l.trim()) || '';
+    let d = ',', best = -1;
+    for (const c of [',', ';', '\t', '|']) {
+      const n = first.replace(/"[^"]*"/g, '').split(c).length;
+      if (n > best) { best = n; d = c; }
+    }
+    const rows = []; let row = [], f = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === d) { row.push(f); f = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+      else f += ch;
+    }
+    if (f !== '' || row.length) { row.push(f); rows.push(row); }
+    return { grid: rows, delim: d };
+  }
+
+  const isBlank = (v) => v == null || (typeof v === 'string' && v.trim() === '');
+
+  function gridToTable(grid) {
+    const rows = grid.filter((r) => r && r.some((v) => !isBlank(v)));
+    if (!rows.length) throw new Error('El archivo está vacío.');
+    // Encabezado: la primera fila con al menos dos celdas de texto
+    let h = rows.findIndex((r) => r.filter((v) => typeof v === 'string' && v.trim() && !/^-?\d+([.,]\d+)?$/.test(v.trim())).length >= 2);
+    if (h < 0) h = 0;
+    const head = rows[h];
+    const width = Math.max(...rows.slice(h).map((r) => r.length));
+    const seen = {};
+    const columns = [];
+    for (let i = 0; i < width; i++) {
+      let name = isBlank(head[i]) ? 'Columna ' + (i + 1) : String(head[i]).trim();
+      if (seen[name]) name = name + ' (' + (++seen[name]) + ')'; else seen[name] = 1;
+      columns.push(name);
+    }
+    const data = rows.slice(h + 1).map((r) => { const o = {}; columns.forEach((c, i) => { o[c] = r[i] ?? null; }); return o; });
+    return { columns, rows: data };
+  }
+
+  L.readFile = async function (file) {
+    const buf = await file.arrayBuffer();
+    const head = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
+    const isZip = head[0] === 0x50 && head[1] === 0x4b;
+    if (isZip) return gridToTable(await readXlsx(buf));
+    if (/\.xls$/i.test(file.name)) throw new Error('Los .xls antiguos no se pueden leer aquí. Guárdalo como .xlsx o CSV.');
+    return gridToTable(parseCSV(decodeText(buf)).grid);
+  };
+
+  const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const ROLES = {
+    lat: [/^(lat|latitud|latitude|y)$/, /\blatitud|\blatitude|\blat\b/],
+    lon: [/^(lon|lng|long|longitud|longitude|x)$/, /\blongitud|\blongitude|\blng\b|\blon\b/],
+    time: [/fecha.*hora|date.*time|timestamp|datetime|marca de tiempo|fecha hora/, /^(fecha|date|dia)$|\bfecha\b|\bdate\b/, /^(hora|time|tiempo)$|\bhora\b|\btime\b/],
+    clock: [/^(hora|time)$|^hora\b|\bhora\b/],
+    speed: [/velocidad|speed|\bkm ?h\b|\bkph\b|\bvel\b/],
+    truck: [/camion|unidad|vehiculo|\bplaca|truck|economico|\beco\b|tracto|\bunit\b|vehicle|\bid\b/],
+    place: [/ciudad|localidad|\blugar|ubicacion|municipio|poblacion|\bcity|location|direccion|\bplace|\bzona|\bsitio|referencia/],
+    event: [/evento|alerta|event|alarm|incidencia|\btipo\b|estatus|status/]
+  };
+  L.ROLE_ORDER = ['lat', 'lon', 'time', 'clock', 'speed', 'truck', 'place', 'event'];
+  L.OPTIONAL = { clock: 1, speed: 1, truck: 1, place: 1, event: 1 };
+
+  L.detect = function (columns) {
+    const M = {}; const used = new Set();
+    const nc = columns.map((c) => [c, norm(c)]);
+    for (const role of L.ROLE_ORDER) {
+      M[role] = null;
+      for (const re of ROLES[role]) {
+        const hit = nc.find(([c, n]) => !used.has(c) && re.test(n));
+        if (hit) { M[role] = hit[0]; break; }
+      }
+      if (M[role]) used.add(M[role]);
+    }
+    // La hora aparte solo cuenta si la fecha es otra columna que no trae hora
+    if (M.clock && M.time && /hora|time/.test(norm(M.time))) M.clock = null;
+    if (M.clock && !M.time) { M.time = M.clock; M.clock = null; }
+    return M;
+  };
+
+  L.num = function (v) {
+    if (v == null || v === '') return NaN;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'boolean') return NaN;
+    if (typeof v === 'object') return v.serial;
+    let s = String(v).trim().replace(/\s|km\/?h|kph/gi, '');
+    if (/^-?\d{1,3}(\.\d{3})+,\d+$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^-?\d+,\d+$/.test(s)) s = s.replace(',', '.');
+    else s = s.replace(/,(?=\d{3}(\D|$))/g, '');
+    return /^-?\d*\.?\d+(e-?\d+)?$/i.test(s) ? parseFloat(s) : NaN;
+  };
+
+  const serialMs = (n) => Math.round((n - 25569) * 864e5);
+  function mk(y, mo, d, hh, mm, ss, ap) {
+    let h = hh == null ? 0 : +hh;
+    if (ap) { const pm = /p/i.test(ap); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    return Date.UTC(y, mo - 1, d, h, mm == null ? 0 : +mm, ss == null ? 0 : +ss);
+  }
+  L.parseWhen = function (v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'object') return 'serial' in v ? (v.serial < 1 ? Math.round(v.serial * 864e5) : serialMs(v.serial)) : null;
+    if (typeof v === 'number') {
+      if (v >= 0 && v < 1) return Math.round(v * 864e5);
+      if (v > 20000 && v < 80000) return serialMs(v);
+      if (v > 1e11 && v < 1e14) return v;
+      if (v > 1e9 && v < 1e11) return v * 1000;
+      return null;
+    }
+    const s = String(v).trim();
+    const T = '(?:[ T,]+(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:[.,]\\d+)?)?\\s*([ap]\\.?\\s*m\\.?)?)?';
+    let m = s.match(new RegExp('^(\\d{4})[-/.](\\d{1,2})[-/.](\\d{1,2})' + T, 'i'));
+    if (m) return mk(+m[1], +m[2], +m[3], m[4], m[5], m[6], m[7]);
+    m = s.match(new RegExp('^(\\d{1,2})[-/.](\\d{1,2})[-/.](\\d{2,4})' + T, 'i'));
+    if (m) {
+      let y = +m[3]; if (y < 100) y += 2000;
+      let d = +m[1], mo = +m[2];
+      if (mo > 12 && d <= 12) { const x = d; d = mo; mo = x; }
+      return mk(y, mo, d, m[4], m[5], m[6], m[7]);
+    }
+    m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:[.,]\d+)?)?\s*([ap]\.?\s*m\.?)?$/i);
+    if (m) {
+      let h = +m[1]; if (m[4]) { const pm = /p/i.test(m[4]); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+      return ((h * 60 + +m[2]) * 60 + (+m[3] || 0)) * 1000;
+    }
+    if (/^\d+([.,]\d+)?$/.test(s)) return L.parseWhen(L.num(s));
+    const t = Date.parse(s);
+    return Number.isNaN(t) ? null : t;
+  };
+
+  L.hav = function (a, b) {
+    const R = 6371.0088, r = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+  };
+
+  const clean = (v) => (v == null ? '' : typeof v === 'object' ? String(v.serial) : String(v).trim());
+
+  L.trucks = function (P, M) {
+    if (!M.truck) return [];
+    const out = []; const s = new Set();
+    for (const r of P.rows) { const t = clean(r[M.truck]); if (t && !s.has(t)) { s.add(t); out.push(t); } }
+    return out;
+  };
+
+  L.compute = function (P, M, truckSel) {
+    if (!M.lat || !M.lon) return { error: 'No encontré las columnas de latitud y longitud. Elígelas en “Columnas del archivo”.' };
+    if (!M.time) return { error: 'No encontré una columna de fecha u hora. Elígela en “Columnas del archivo”.' };
+    const sh = M.speed ? norm(M.speed) : '';
+    const fac = /mph|millas/.test(sh) ? 1.609344 : /\bm s\b|m seg|mps/.test(sh) ? 3.6 : /\bnudos|knots|\bkn\b/.test(sh) ? 1.852 : 1;
+    const trucks = L.trucks(P, M);
+    const truck = trucks.length ? (trucks.includes(truckSel) ? truckSel : trucks[0]) : '';
+    let pts = []; let timeOnly = true; let bad = 0;
+    P.rows.forEach((r, i) => {
+      if (M.truck && trucks.length && clean(r[M.truck]) !== truck) return;
+      const lat = L.num(r[M.lat]), lon = L.num(r[M.lon]);
+      let t = L.parseWhen(r[M.time]);
+      if (M.clock && M.clock !== M.time && t != null) {
+        const c = L.parseWhen(r[M.clock]);
+        if (c != null) t = Math.floor(t / 864e5) * 864e5 + (((c % 864e5) + 864e5) % 864e5);
+      }
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || t == null || Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) { bad++; return; }
+      if (t >= 864e5) timeOnly = false;
+      const vr = M.speed ? L.num(r[M.speed]) : NaN;
+      pts.push({ i, t, lat, lon, vraw: Number.isFinite(vr) ? vr * fac : NaN, place: M.place ? clean(r[M.place]) : '', ev: M.event ? clean(r[M.event]) : '' });
+    });
+    if (!pts.length) return { error: 'Ninguna fila tiene latitud, longitud y hora que se puedan leer. Revisa “Columnas del archivo”.', trucks, truck };
+    if (timeOnly) {
+      let add = 0;
+      for (let k = 1; k < pts.length; k++) {
+        if (pts[k].t + add < pts[k - 1].t - 12 * 36e5) add += 864e5;
+        pts[k].t += add;
+      }
+    } else pts.sort((a, b) => a.t - b.t || a.i - b.i);
+    pts = pts.filter((p, k) => k === 0 || p.t !== pts[k - 1].t);
+    const n = pts.length;
+    if (n < 2) return { error: 'Hacen falta al menos dos registros con hora distinta para trazar el recorrido.', trucks, truck };
+
+    const hasSpeed = pts.filter((p) => Number.isFinite(p.vraw)).length >= n * 0.5;
+    let dist = 0;
+    for (let k = 0; k < n; k++) {
+      const p = pts[k];
+      p.seg = k ? L.hav(pts[k - 1], p) : 0;
+      dist += p.seg;
+    }
+    for (let k = 0; k < n; k++) {
+      const p = pts[k];
+      if (hasSpeed && Number.isFinite(p.vraw)) { p.v = p.vraw; continue; }
+      const a = pts[Math.max(0, k - 1)], b = pts[k === 0 ? 1 : k];
+      const dt = (b.t - a.t) / 36e5;
+      p.v = dt > 0 ? (k === 0 ? pts[1].seg : p.seg) / dt : 0;
+      p.est = true;
+    }
+    const thr = hasSpeed ? L.STOP_KMH : L.STOP_KMH_GPS;
+    pts.forEach((p) => { p.stopped = p.v <= thr; });
+
+    // tramos detenidos
+    const runs = [];
+    for (let k = 0; k < n; k++) {
+      if (!pts[k].stopped) continue;
+      let j = k; while (j + 1 < n && pts[j + 1].stopped) j++;
+      runs.push([k, j]); k = j;
+    }
+    const first = runs.length && runs[0][0] === 0 ? runs[0] : null;
+    const last = runs.length && runs[runs.length - 1][1] === n - 1 ? runs[runs.length - 1] : null;
+    const dep = first && first !== last ? pts[first[1]].t : pts[0].t;
+    const arr = last && last !== first ? pts[last[0]].t : pts[n - 1].t;
+
+    const harshRe = /brusc|harsh|frenad|freno|hard brak|desacel/i;
+    const stops = [];
+    for (const [a, b] of runs) {
+      if (a === 0 || b === n - 1) continue;
+      const start = pts[a].t, end = pts[b + 1].t;
+      const dur = (end - start) / 1000;
+      if (dur < L.MIN_STOP_S) continue;
+      let maxD = null, gap = Infinity;
+      for (let k = a - 1; k >= 0; k--) {
+        if (start - pts[k + 1].t > L.APPROACH_S * 1000) break;
+        const dt = (pts[k + 1].t - pts[k].t) / 1000;
+        if (dt > 0) { const d = (pts[k].v - pts[k + 1].v) / 3.6 / dt; if (maxD == null || d > maxD) maxD = d; gap = Math.min(gap, dt); }
+      }
+      let evHarsh = false;
+      for (let k = a; k >= 0 && start - pts[k].t <= L.APPROACH_S * 1000; k--) if (harshRe.test(pts[k].ev)) { evHarsh = true; break; }
+      if (!evHarsh) for (let k = a; k <= b; k++) if (harshRe.test(pts[k].ev)) { evHarsh = true; break; }
+      const type = evHarsh || (maxD != null && maxD >= L.HARSH_MS2) ? 'brusca' : 'normal';
+      stops.push({ n: stops.length + 1, a, b, start, end, dur, lat: pts[a].lat, lon: pts[a].lon, place: pts[a].place, decel: maxD == null ? null : Math.max(0, maxD), gap, evHarsh, type });
+    }
+
+    let moving = 0;
+    for (let k = 1; k < n; k++) if (!(pts[k - 1].stopped && pts[k].stopped) && pts[k - 1].t >= dep && pts[k].t <= arr) moving += pts[k].t - pts[k - 1].t;
+    const ints = []; for (let k = 1; k < n; k++) ints.push((pts[k].t - pts[k - 1].t) / 1000);
+    ints.sort((x, y) => x - y);
+    const medInt = ints[Math.floor(ints.length / 2)];
+    const coord = (p) => p.lat.toFixed(4) + ', ' + p.lon.toFixed(4);
+    return {
+      truck, trucks, pts, stops, dist, dep, arr, travel: arr - dep, moving,
+      vmax: d3.max(pts, (p) => p.v), hasSpeed, thr, medInt, timeOnly, bad,
+      origin: pts[0].place || coord(pts[0]), dest: pts[n - 1].place || coord(pts[n - 1]),
+      originHasName: !!pts[0].place, destHasName: !!pts[n - 1].place, multiDay: !timeOnly && Math.floor(pts[0].t / 864e5) !== Math.floor(pts[n - 1].t / 864e5)
+    };
+  };
+
+  const loc = d3.timeFormatLocale({
+    dateTime: '%x, %X', date: '%d/%m/%Y', time: '%H:%M:%S', periods: ['a. m.', 'p. m.'],
+    days: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+    shortDays: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
+    months: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    shortMonths: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+  });
+  L.fmtTime = loc.utcFormat('%H:%M');
+  L.fmtDayTime = loc.utcFormat('%-d %b %H:%M');
+  L.fmtDay = loc.utcFormat('%-d %b');
+  L.fmtFull = loc.utcFormat('%-d %b %Y, %H:%M');
+  const nf = d3.formatLocale({ decimal: '.', thousands: ',', grouping: [3], currency: ['$', ''] });
+  L.f0 = nf.format(',.0f'); L.f1 = nf.format(',.1f');
+  L.when = (R, t) => (R.multiDay ? L.fmtDayTime(t) : L.fmtTime(t));
+  L.dur = function (ms) {
+    const s = Math.round(ms / 1000);
+    if (s < 60) return s + ' s';
+    const m = Math.round(s / 60);
+    if (m < 60) return m + ' min';
+    const h = Math.floor(m / 60), mm = m % 60;
+    if (h < 24) return h + ' h' + (mm ? ' ' + String(mm).padStart(2, '0') + ' min' : '');
+    const d = Math.floor(h / 24), hh = h % 24;
+    return d + ' d' + (hh ? ' ' + hh + ' h' : '');
+  };
+  L.km = (k) => (k < 10 ? L.f1(k) : L.f0(k)) + ' km';
+  L.color = (type) => (type === 'brusca' ? 'var(--cds-chart-status-critical)' : (window.dash && dash.colors && dash.colors[1]) || 'var(--color-ok)');
+  window.TRKLIB = L;
+})();
+</script>
+
+<script>
+/* Estado de la página y carga del archivo (todo en memoria). */
+(function () {
+  const L = window.TRKLIB;
+  const S = window.TRK = { name: null, table: null, map: null, truck: null, res: null, error: '' };
+  const DRAWS = ['trk-error', 'trk-fname', 'trk-rows', 'trk-truck', 'trk-colsel', 's-truck', 's-origin', 's-dest', 's-dur', 's-stops', 's-harsh',
+    'k-truck', 'k-origin', 'k-dep', 'k-dest', 'k-arr', 'k-dur', 'k-moving', 'k-dist', 'k-vmax', 'k-stops', 'k-normal', 'k-harsh',
+    'trk-map', 'trk-speed', 'trk-stops-rows', 'trk-interval', 'c-stopkmh', 'c-stopmin', 'c-window', 'c-harsh', 'c-harshkmh'];
+
+  function show(sel, on) { document.querySelectorAll(sel).forEach((el) => { el.hidden = !on; }); }
+
+  S.update = function () {
+    S.res = S.table ? L.compute(S.table, S.map, S.truck) : null;
+    if (S.res && S.res.truck != null) S.truck = S.res.truck;
+    const ok = !!(S.res && !S.res.error);
+    show('#trk-upload', !S.table);
+    show('#trk-bar', !!S.table);
+    show('#trk-cols', !!S.table);
+    show('#trk-report', ok);
+    show('#trk-lede', ok);
+    show('#trk-lede-empty', !ok);
+    show('#trk-truckpick', !!(S.res && S.res.trucks && S.res.trucks.length > 1));
+    show('#trk-nostops', ok && !S.res.stops.length);
+    show('#trk-stopstable', ok && S.res.stops.length > 0);
+    show('#trk-caveat', ok && S.res.stops.length > 0 && S.res.medInt > L.SPARSE_S);
+    if (S.table && S.res && S.res.error) document.querySelectorAll('#trk-cols').forEach((d) => { d.open = true; });
+    S.redraw();
+  };
+  S.redraw = function () { for (const n of DRAWS) { try { dash.draw(n); } catch (e) {} } };
+
+  async function load(file) {
+    if (!file) return;
+    S.error = '';
+    try {
+      const table = await L.readFile(file);
+      if (!table.rows.length) throw new Error('El archivo solo tiene encabezados, sin registros.');
+      S.table = table; S.name = file.name; S.map = L.detect(table.columns); S.truck = null;
+    } catch (e) {
+      S.error = 'No pude leer “' + file.name + '”: ' + (e && e.message ? e.message : 'formato no reconocido') + '';
+    }
+    S.update();
+  }
+  S.load = load;
+
+  document.querySelectorAll('#trk-file').forEach((inp) => {
+    inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; load(f); inp.value = ''; });
+  });
+  document.querySelectorAll('#trk-root').forEach((root) => {
+    const zone = () => root.querySelector('#trk-upload');
+    root.addEventListener('dragover', (e) => { e.preventDefault(); const z = zone(); if (z) z.classList.add('trk-over'); });
+    root.addEventListener('dragleave', (e) => { if (e.target === root || e.target === zone()) { const z = zone(); if (z) z.classList.remove('trk-over'); } });
+    root.addEventListener('drop', (e) => {
+      e.preventDefault(); const z = zone(); if (z) z.classList.remove('trk-over');
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; load(f);
+    });
+  });
+})();
+</script>
+
+<script>
+/* Dibujos: todo lo que depende del archivo cargado. */
+(function () {
+  const L = window.TRKLIB, S = window.TRK;
+  const R = () => (S.res && !S.res.error ? S.res : null);
+  const txt = (name, f) => dash.draw(name, (el) => { const r = R(); el.textContent = r ? f(r) : '—'; });
+
+  dash.draw('trk-error', (el) => { el.textContent = S.error || (S.res && S.res.error) || ''; });
+  dash.draw('trk-fname', (el) => { el.textContent = S.name || '—'; });
+  dash.draw('trk-rows', (el) => {
+    const r = R();
+    if (!S.table) { el.textContent = '—'; return; }
+    const n = S.table.rows.length;
+    el.textContent = L.f0(n) + (n === 1 ? ' fila' : ' filas') + (r ? ' · ' + L.f0(r.pts.length) + ' puntos de ' + (r.truck ? 'este camión' : 'recorrido') : '');
+  });
+
+  dash.draw('trk-truck', (sel) => {
+    const ts = (S.res && S.res.trucks) || [];
+    sel.replaceChildren(...ts.map((t) => new Option(t, t)));
+    if (S.truck != null) sel.value = S.truck;
+    sel.onchange = () => { S.truck = sel.value; S.update(); };
+  });
+
+  dash.draw('trk-colsel', (sel) => {
+    const role = sel.getAttribute('data-role');
+    const cols = S.table ? S.table.columns : [];
+    const opts = [new Option(L.OPTIONAL[role] ? '— Ninguna —' : '— Elegir —', '')].concat(cols.map((c) => new Option(c, c)));
+    sel.replaceChildren(...opts);
+    sel.value = (S.map && S.map[role]) || '';
+    sel.onchange = () => { S.map[role] = sel.value || null; S.truck = role === 'truck' ? null : S.truck; S.update(); };
+  });
+
+  const plural = (n, one, many) => L.f0(n) + ' ' + (n === 1 ? one : many);
+  txt('s-truck', (r) => r.truck || 'sin identificar');
+  txt('s-origin', (r) => r.origin);
+  txt('s-dest', (r) => r.dest);
+  txt('s-dur', (r) => L.dur(r.travel));
+  txt('s-stops', (r) => (r.stops.length ? plural(r.stops.length, 'parada', 'paradas') : 'ninguna parada'));
+  txt('s-harsh', (r) => { const h = r.stops.filter((s) => s.type === 'brusca').length; return h ? plural(h, 'brusca', 'bruscas') : 'ninguna brusca'; });
+  txt('k-truck', (r) => r.truck || 'Sin identificar');
+  txt('k-origin', (r) => r.origin);
+  txt('k-dest', (r) => r.dest);
+  txt('k-dep', (r) => (r.timeOnly ? L.fmtTime(r.dep) : L.fmtFull(r.dep)));
+  txt('k-arr', (r) => (r.timeOnly ? L.fmtTime(r.arr) : L.fmtFull(r.arr)));
+  txt('k-dur', (r) => L.dur(r.travel));
+  txt('k-moving', (r) => L.dur(r.moving));
+  txt('k-dist', (r) => L.km(r.dist));
+  txt('k-vmax', (r) => L.f0(r.vmax) + ' km/h');
+  txt('k-stops', (r) => L.f0(r.stops.length));
+  txt('k-normal', (r) => { const k = r.stops.filter((s) => s.type === 'normal').length; return plural(k, 'normal', 'normales'); });
+  txt('k-harsh', (r) => { const k = r.stops.filter((s) => s.type === 'brusca').length; return plural(k, 'brusca', 'bruscas'); });
+  txt('trk-interval', (r) => L.dur(r.medInt * 1000));
+  txt('c-stopkmh', (r) => L.f0(r.thr));
+  txt('c-stopmin', () => L.f0(L.MIN_STOP_S / 60));
+  txt('c-window', () => L.f0(L.APPROACH_S));
+  txt('c-harsh', () => L.f1(L.HARSH_MS2));
+  txt('c-harshkmh', () => L.f0(L.HARSH_MS2 * 3.6));
+
+  // muestras de color de la leyenda
+  function legend() {
+    document.querySelectorAll('[data-sw="normal"]').forEach((e) => { e.style.background = L.color('normal'); });
+    document.querySelectorAll('[data-sw="brusca"]').forEach((e) => { e.style.background = L.color('brusca'); });
+    document.querySelectorAll('[data-sw="route"]').forEach((e) => { e.style.background = dash.colors[0]; });
+  }
+  legend();
+
+  function tipAt(box, tip, x, y) {
+    const W = box.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = x + 14; if (left + tw > W) left = x - tw - 14; if (left < 0) left = Math.max(0, Math.min(W - tw, x - tw / 2));
+    let top = y - th - 12; if (top < 0) top = y + 16;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  }
+  function tipLines(tip, lines) {
+    tip.replaceChildren();
+    lines.forEach(([b, rest], i) => {
+      if (i) tip.appendChild(document.createElement('br'));
+      if (b) { const e = document.createElement('b'); e.textContent = b; tip.appendChild(e); }
+      if (rest) { const s = document.createElement('span'); s.textContent = (b ? ' ' : '') + rest; tip.appendChild(s); }
+    });
+  }
+
+  /* ---------- Mapa ---------- */
+  dash.draw('trk-map', (el) => {
+    el.replaceChildren();
+    const r = R(); if (!r) { el.textContent = '—'; return; }
+    const W = Math.max(260, el.clientWidth);
+    const H = Math.round(Math.max(300, Math.min(520, W * 0.62)));
+    const pad = 28;
+    const coords = r.pts.map((p) => [p.lon, p.lat]);
+    const ext = [d3.extent(coords, (c) => c[0]), d3.extent(coords, (c) => c[1])];
+    const span = Math.max(ext[0][1] - ext[0][0], ext[1][1] - ext[1][0]);
+    const fitPts = coords.slice();
+    if (span < 0.01) { const cx = (ext[0][0] + ext[0][1]) / 2, cy = (ext[1][0] + ext[1][1]) / 2; fitPts.push([cx - 0.01, cy - 0.01], [cx + 0.01, cy + 0.01]); }
+    const proj = d3.geoMercator().fitExtent([[pad, pad], [W - pad, H - pad]], { type: 'MultiPoint', coordinates: fitPts });
+    const path = d3.geoPath(proj);
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('role', 'img').attr('aria-label', `Mapa del trayecto de ${r.origin} a ${r.dest} con ${r.stops.length} paradas`);
+
+    // retícula de referencia
+    const steps = [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10];
+    const stp = steps.find((s) => span / s <= 6) || 10;
+    const g0 = proj.invert([0, H]), g1 = proj.invert([W, 0]);
+    svg.append('path').datum(d3.geoGraticule().extent([[g0[0] - stp, g0[1] - stp], [g1[0] + stp, g1[1] + stp]]).step([stp, stp])())
+      .attr('d', path).attr('fill', 'none').style('stroke', 'var(--cds-chart-grid)').attr('stroke-width', 1);
+
+    // trayecto
+    svg.append('path').datum({ type: 'LineString', coordinates: coords }).attr('d', path).attr('fill', 'none')
+      .style('stroke', dash.colors[0]).attr('stroke-width', 3).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+
+    const P = (lon, lat) => proj([lon, lat]);
+    const o = r.pts[0], d = r.pts[r.pts.length - 1];
+    const markers = []; // obstáculos para etiquetas
+    const stopG = svg.append('g');
+    const R0 = 8;
+    r.stops.forEach((s) => { const [x, y] = P(s.lon, s.lat); s._x = x; s._y = y; markers.push({ x: x - R0, y: y - R0, w: 2 * R0, h: 2 * R0 }); });
+    const [ox, oy] = P(o.lon, o.lat), [dx, dy] = P(d.lon, d.lat);
+    markers.push({ x: ox - 8, y: oy - 8, w: 16, h: 16 }, { x: dx - 8, y: dy - 8, w: 16, h: 16 });
+
+    svg.append('circle').attr('cx', ox).attr('cy', oy).attr('r', 7).style('fill', 'var(--color-panel)').style('stroke', 'var(--color-fg)').attr('stroke-width', 3);
+    svg.append('circle').attr('cx', dx).attr('cy', dy).attr('r', 7).style('fill', 'var(--color-fg)').style('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+
+    const sg = stopG.selectAll('g').data(r.stops).join('g').attr('transform', (s) => `translate(${s._x},${s._y})`).style('cursor', 'default');
+    sg.append('circle').attr('r', R0).style('fill', (s) => L.color(s.type)).style('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+    sg.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('fill', '#fff').style('font-size', r.stops.length > 99 ? '8px' : '10px').style('font-weight', 600)
+      .style('pointer-events', 'none').text((s) => s.n);
+
+    // etiquetas de lugares, sin encimarse
+    const labels = [];
+    const add = (name, x, y, pri, strong) => {
+      if (!name) return;
+      const ex = labels.find((l) => l.name === name);
+      if (ex) { if (pri > ex.pri) { ex.pri = pri; ex.x = x; ex.y = y; } ex.strong = ex.strong || strong; return; }
+      labels.push({ name, x, y, pri, strong });
+    };
+    add(r.originHasName ? r.origin : 'Origen', ox, oy, 4, true);
+    add(r.destHasName ? r.dest : 'Destino', dx, dy, 4, true);
+    r.stops.forEach((s) => add(s.place, s._x, s._y, 2, false));
+    if (r.pts.some((p) => p.place)) {
+      let k = 0;
+      while (k < r.pts.length) {
+        let j = k; while (j + 1 < r.pts.length && r.pts[j + 1].place === r.pts[k].place) j++;
+        const m = r.pts[Math.floor((k + j) / 2)];
+        if (m.place) { const [x, y] = P(m.lon, m.lat); add(m.place, x, y, 1, false); }
+        k = j + 1;
+      }
+    }
+    labels.sort((a, b) => b.pri - a.pri);
+    const meas = svg.append('text').attr('class', 'trk-maplabel trk-strong').attr('x', -999).attr('y', -999);
+    const placed = [];
+    const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    const lh = 14, gapL = 11;
+    for (const lb of labels) {
+      meas.attr('class', 'trk-maplabel' + (lb.strong ? ' trk-strong' : '')).text(lb.name);
+      const tw = meas.node().getComputedTextLength() || lb.name.length * 6.5;
+      const cands = [
+        [gapL, -lh / 2, 'start'], [-gapL, -lh / 2, 'end'], [-tw / 2, -gapL - lh, 'mid'], [-tw / 2, gapL, 'mid'],
+        [gapL - 2, -gapL - lh + 4, 'start'], [gapL - 2, gapL - 4, 'start'], [-gapL + 2, -gapL - lh + 4, 'end'], [-gapL + 2, gapL - 4, 'end']
+      ];
+      let best = null, bestScore = Infinity;
+      for (const [cx, cy, an] of cands) {
+        const x0 = an === 'end' ? lb.x + cx - tw : an === 'mid' ? lb.x + cx : lb.x + cx;
+        const box = { x: x0 - 2, y: lb.y + cy - 1, w: tw + 4, h: lh + 2 };
+        if (box.x < 2 || box.y < 2 || box.x + box.w > W - 2 || box.y + box.h > H - 2) continue;
+        const over = placed.filter((p) => hit(box, p)).length + markers.filter((m) => hit(box, m)).length;
+        if (over === 0) { best = box; bestScore = 0; break; }
+        if (over < bestScore) { bestScore = over; best = box; }
+      }
+      if (!best) continue;
+      if (bestScore > 0 && lb.pri < 4) continue; // si no cabe sin encimarse, se omite
+      placed.push(best);
+      svg.append('text').attr('class', 'trk-maplabel' + (lb.strong ? ' trk-strong' : '')).attr('x', best.x + 2).attr('y', best.y + 1 + lh - 3).text(lb.name);
+    }
+    meas.remove();
+    stopG.raise();
+
+    // escala
+    const c0 = proj.invert([W / 2, H / 2]), c1 = proj.invert([W / 2 + 100, H / 2]);
+    const kmPer100 = d3.geoDistance(c0, c1) * 6371.0088;
+    const target = kmPer100 * (Math.min(140, W * 0.3) / 100);
+    const nice = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].filter((v) => v <= target).pop() || 0.1;
+    const px = nice / kmPer100 * 100;
+    const sb = svg.append('g').attr('transform', `translate(${12},${H - 12})`);
+    sb.append('path').attr('d', `M0,-5V0H${px}V-5`).attr('fill', 'none').style('stroke', 'var(--color-fg-muted)').attr('stroke-width', 1.5);
+    sb.append('text').attr('x', px + 6).attr('y', 0).attr('class', 'trk-maplabel').style('font-size', '11px').style('fill', 'var(--color-fg-muted)').text((nice < 1 ? nice * 1000 + ' m' : nice + ' km'));
+
+    // tooltip
+    const tip = document.createElement('div'); tip.className = 'trk-tip'; tip.hidden = true; el.appendChild(tip);
+    sg.on('pointerenter pointermove', (ev, s) => {
+      tipLines(tip, [
+        ['Parada ' + s.n, s.type === 'brusca' ? '· brusca' : '· normal'],
+        [null, (s.place ? s.place + ' · ' : '') + L.when(r, s.start) + ' a ' + L.when(r, s.end)],
+        [null, 'Duración ' + L.dur(s.dur * 1000) + (s.decel != null ? ' · frenado ' + L.f1(s.decel) + ' m/s²' : '')]
+      ]);
+      tip.hidden = false;
+      const [mx, my] = d3.pointer(ev, el); tipAt(el, tip, mx, my);
+    }).on('pointerleave', () => { tip.hidden = true; });
+  });
+
+  /* ---------- Velocidad ---------- */
+  dash.draw('trk-speed', (el) => {
+    el.replaceChildren();
+    const r = R(); if (!r) { el.textContent = '—'; return; }
+    const W = Math.max(260, el.clientWidth), H = 250;
+    const pts = r.pts;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('role', 'img').attr('aria-label', `Velocidad del camión en el tiempo; máxima ${L.f0(r.vmax)} km/h`);
+    const y = d3.scaleLinear().domain([0, Math.max(10, r.vmax * 1.08)]).nice();
+    const measure = (strs) => {
+      const t = svg.append('g').attr('class', 'tick').append('text');
+      let m = 0; for (const s of strs) { t.text(s); m = Math.max(m, t.node().getComputedTextLength() || s.length * 7); }
+      t.node().parentNode.remove(); return m;
+    };
+    const yt = y.ticks(5);
+    const mL = Math.ceil(measure(yt.map(L.f0))) + 12;
+    const mT = 22, mB = 28;
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+    const x = d3.scaleUtc().domain([t0, t1]);
+    const fmt = (t) => {
+      const d = new Date(t);
+      if (r.multiDay && d.getUTCHours() === 0 && d.getUTCMinutes() === 0) return L.fmtDay(d);
+      return L.fmtTime(d);
+    };
+    const sample = measure([fmt(t0), fmt(t1), '00:00', r.multiDay ? '30 sep' : '']);
+    const mR = Math.ceil(sample / 2) + 6;
+    const iw = W - mL - mR, ih = H - mT - mB;
+    x.range([0, iw]); y.range([ih, 0]);
+    let count = Math.max(2, Math.floor(iw / (sample + 28)));
+    let ticks = x.ticks(count);
+    while (ticks.length > 2 && ticks.length * (sample + 20) > iw) { count--; ticks = x.ticks(Math.max(1, count)); }
+    const g = svg.append('g').attr('transform', `translate(${mL},${mT})`);
+
+    g.append('g').call(d3.axisLeft(y).tickValues(yt).tickSize(-iw).tickFormat(L.f0)).call((a) => {
+      a.select('.domain').remove();
+      a.selectAll('.tick line').style('stroke', 'var(--cds-chart-grid)');
+      a.selectAll('.tick text').attr('x', -8);
+    });
+    svg.append('text').attr('x', 0).attr('y', 12).style('font-size', 'var(--cds-font-size-caption)').style('fill', 'var(--cds-text-secondary)').text('km/h');
+
+    // franjas de parada
+    const band = g.append('g');
+    band.selectAll('rect').data(r.stops).join('rect')
+      .attr('x', (s) => x(s.start)).attr('width', (s) => Math.max(2, x(s.end) - x(s.start))).attr('y', 0).attr('height', ih)
+      .style('fill', (s) => L.color(s.type)).style('opacity', 0.16);
+
+    g.append('path').datum(pts).attr('fill', 'none').style('stroke', dash.colors[0]).attr('stroke-width', 1.8).attr('stroke-linejoin', 'round')
+      .attr('d', d3.line().x((p) => x(p.t)).y((p) => y(p.v)));
+
+    const xa = g.append('g').attr('transform', `translate(0,${ih})`).call(d3.axisBottom(x).tickValues(ticks).tickFormat(fmt).tickSizeOuter(0));
+    xa.select('.domain').style('stroke', 'var(--cds-chart-axis)');
+    xa.selectAll('.tick line').style('stroke', 'var(--cds-chart-axis)');
+    // que ninguna etiqueta se salga por los lados
+    xa.selectAll('.tick').each(function (t) {
+      const tx = x(t), text = this.querySelector('text'); if (!text) return;
+      const w = text.getComputedTextLength();
+      if (tx - w / 2 < -mL + 2) { text.setAttribute('text-anchor', 'start'); text.setAttribute('x', -tx - mL + 2); }
+      else if (tx + w / 2 > iw + mR - 2) { text.setAttribute('text-anchor', 'end'); text.setAttribute('x', iw + mR - 2 - tx); }
+    });
+
+    // números de parada
+    const sm = g.append('g').selectAll('g').data(r.stops).join('g').attr('transform', (s) => `translate(${x(s.start) + Math.max(2, x(s.end) - x(s.start)) / 2},${ih - 11})`);
+    sm.append('circle').attr('r', 8).style('fill', (s) => L.color(s.type)).style('stroke', 'var(--color-panel)').attr('stroke-width', 1.5);
+    sm.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('fill', '#fff').style('font-size', '9.5px').style('font-weight', 600).text((s) => s.n);
+
+    // interacción
+    const rule = g.append('line').attr('y1', 0).attr('y2', ih).style('stroke', 'var(--cds-chart-reference)').attr('stroke-width', 1).style('opacity', 0);
+    const dot = g.append('circle').attr('r', 4).style('fill', dash.colors[0]).style('stroke', 'var(--color-panel)').attr('stroke-width', 2).style('opacity', 0);
+    const tip = document.createElement('div'); tip.className = 'trk-tip'; tip.hidden = true; el.appendChild(tip);
+    const bis = d3.bisector((p) => p.t).center;
+    g.append('rect').attr('width', iw).attr('height', ih).attr('fill', 'transparent').style('touch-action', 'pan-y')
+      .on('pointerenter pointermove', (ev) => {
+        const [mx] = d3.pointer(ev);
+        const p = pts[bis(pts, x.invert(mx))]; if (!p) return;
+        const px = x(p.t), py = y(p.v);
+        rule.attr('x1', px).attr('x2', px).style('opacity', 1); dot.attr('cx', px).attr('cy', py).style('opacity', 1);
+        const s = r.stops.find((s) => p.t >= s.start && p.t <= s.end);
+        const lines = [[L.f0(p.v) + ' km/h', L.when(r, p.t)]];
+        if (p.place) lines.push([null, p.place]);
+        if (s) lines.push(['Parada ' + s.n, (s.type === 'brusca' ? 'brusca' : 'normal') + ' · ' + L.dur(s.dur * 1000)]);
+        tipLines(tip, lines); tip.hidden = false; tipAt(el, tip, px + mL, py + mT);
+      })
+      .on('pointerleave', () => { tip.hidden = true; rule.style('opacity', 0); dot.style('opacity', 0); });
+  });
+
+  /* ---------- Tabla de paradas ---------- */
+  dash.draw('trk-stops-rows', (tb) => {
+    tb.replaceChildren();
+    const r = R(); if (!r) return;
+    for (const s of r.stops) {
+      const tr = document.createElement('tr');
+      const td = (content, cls) => { const c = document.createElement('td'); if (cls) c.className = cls; if (content instanceof Node) c.appendChild(content); else c.textContent = content; tr.appendChild(c); };
+      const num = document.createElement('span'); num.className = 'trk-num'; num.style.background = L.color(s.type); num.textContent = s.n; td(num);
+      td(L.when(r, s.start) + '–' + L.fmtTime(s.end));
+      td(s.place || (s.lat.toFixed(4) + ', ' + s.lon.toFixed(4)), 'trk-place');
+      td(L.dur(s.dur * 1000));
+      td(s.decel == null ? '—' : L.f1(s.decel) + ' m/s²' + (s.evHarsh ? ' · alerta' : ''));
+      const b = document.createElement('span'); b.className = 'trk-badge trk-badge-' + s.type; b.textContent = s.type === 'brusca' ? 'Brusca' : 'Normal'; td(b);
+      tb.appendChild(tr);
+    }
+  });
+
+  S.update();
+})();
+</script>
+
+</div>
+<script>for(const n in __draws) dash.draw(n); let __w=innerWidth; addEventListener('resize',()=>{ if(innerWidth!==__w){__w=innerWidth; TRK.redraw();} });</script>
+</body></html>
