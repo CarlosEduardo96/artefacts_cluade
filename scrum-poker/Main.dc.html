@@ -162,18 +162,18 @@ Descargar reporte (Excel)
 <!-- ============ LOGIN ============ -->
 <sc-if value="{{showLogin}}" hint-placeholder-val="{{ false }}">
 <div style="display: flex; justify-content: center; padding-top: 32px">
-<form onSubmit="{{login}}" style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+<div style="width: 100%; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 16px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
 <div>
 <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px">Unirse a la sesión</h1>
 <p style="margin: 6px 0 0; color: #5A6170">Ingresa tu nombre y el folio que te compartió el administrador.</p>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="u-name" style="font-size: 13px; font-weight: 600; color: #3D4350">Nombre</label>
-<input id="u-name" type="text" autocomplete="name" value="{{nameInput}}" onChange="{{onNameInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F">
+<input id="u-name" type="text" autocomplete="name" value="{{nameInput}}" onChange="{{onNameInput}}" onKeyDown="{{onLoginKey}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F">
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="u-folio" style="font-size: 13px; font-weight: 600; color: #3D4350">Folio de la sesión</label>
-<input id="u-folio" type="text" placeholder="SP-0000" value="{{folioInput}}" onChange="{{onFolioInput}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F; text-transform: uppercase; letter-spacing: .04em">
+<input id="u-folio" type="text" placeholder="SP-0000" value="{{folioInput}}" onChange="{{onFolioInput}}" onKeyDown="{{onLoginKey}}" style="height: 44px; border: 1px solid #CDD2DB; border-radius: 10px; padding: 0 12px; font: inherit; color: #14171F; text-transform: uppercase; letter-spacing: .04em">
 <sc-if value="{{hasFolioHint}}" hint-placeholder-val="{{ true }}">
 <span style="font-size: 13px; color: #5A6170">Folio de la sesión activa: <strong style="color: #3D4350">{{folio}}</strong></span>
 </sc-if>
@@ -181,8 +181,8 @@ Descargar reporte (Excel)
 <sc-if value="{{hasLoginError}}" hint-placeholder-val="{{ false }}">
 <div role="alert" style="font-size: 14px; color: #9A3412; background: #FFF4EC; border-radius: 8px; padding: 10px 12px">{{loginError}}</div>
 </sc-if>
-<button type="submit" style="height: 48px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Entrar</button>
-</form>
+<button type="button" onClick="{{login}}" style="height: 48px; border: 0; border-radius: 10px; background: {{accent}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Entrar</button>
+</div>
 </div>
 </sc-if>
 
@@ -461,6 +461,16 @@ class Component extends DCLogic {
     this.flash('Reporte descargado');
   }
 
+  doLogin() {
+    var s = this.state;
+    var name = s.nameInput.trim();
+    var f = s.folioInput.trim().toUpperCase();
+    if (!name) return this.setState({ loginError: 'Escribe tu nombre.' });
+    if (!f) return this.setState({ loginError: 'Escribe el folio de la sesión.' });
+    if (!s.folio || f !== s.folio) return this.setState({ loginError: 'No hay una sesión activa con el folio ' + f + '.' });
+    this.setState({ userName: name, loggedIn: true, loginError: '' });
+  }
+
   renderVals() {
     var s = this.state;
     var accent = this.props.accent ?? '#3B4BDB';
@@ -608,15 +618,8 @@ class Component extends DCLogic {
       download: () => this.downloadReport(),
       onNameInput: (e) => this.setState({ nameInput: e.target.value, loginError: '' }),
       onFolioInput: (e) => this.setState({ folioInput: e.target.value, loginError: '' }),
-      login: (e) => {
-        if (e && e.preventDefault) e.preventDefault();
-        var name = s.nameInput.trim();
-        var f = s.folioInput.trim().toUpperCase();
-        if (!name) return this.setState({ loginError: 'Escribe tu nombre.' });
-        if (!f) return this.setState({ loginError: 'Escribe el folio de la sesión.' });
-        if (!s.folio || f !== s.folio) return this.setState({ loginError: 'No hay una sesión activa con el folio ' + f + '.' });
-        this.setState({ userName: name, loggedIn: true, loginError: '' });
-      },
+      login: () => this.doLogin(),
+      onLoginKey: (e) => { if (e && e.key === 'Enter') this.doLogin(); },
       submitVote: () => { if (s.myVote) this.setState({ reveal: true, deadline: null, deadlineTotal: null, timedOut: false }); },
       nextStory: () => {
         var st = computeStats(allVotes);
