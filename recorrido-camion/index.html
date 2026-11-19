@@ -1,21 +1,22 @@
 <!DOCTYPE html><html lang="es-MX"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Recorrido del camión</title><style>
-:root{--color-fg:#141413;--color-fg-muted:#5e5d59;--color-bg:#fff;--color-panel:#fff;--color-border-line:#e3e1db;--color-ok:#1b8a5a;--color-warn:#9a5b00;--color-bad:#c0392b;
---cds-chart-status-critical:#d03b3b;--cds-chart-grid:#ecebe6;--cds-chart-axis:#c9c7c0;--cds-chart-reference:#8f8d86;--cds-text-secondary:#5e5d59;--cds-surface-popover:#fff;--cds-border:#d9d7d0;--cds-shadow-popover:0 4px 14px rgba(0,0,0,.12);
+:root{--trk-accent:#6246ea;--trk-accent-soft:#f3f0ff;--trk-teal:#0e9f8e;--trk-rose:#e5484d;--color-fg:#101828;--color-fg-muted:#5a6478;--color-bg:#fff;--color-panel:#fff;--color-border-line:#e2e5f0;--color-ok:#0e9f8e;--color-warn:#b45309;--color-bad:#d93a40;
+--cds-chart-status-critical:#e5484d;--cds-chart-grid:#eceef6;--cds-chart-axis:#c7cbdb;--cds-chart-reference:#8b84c9;--cds-text-secondary:#5a6478;--cds-surface-popover:#fff;--cds-border:#dcdcf0;--cds-shadow-popover:0 8px 24px rgba(40,30,110,.14);
 --cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:12px;--cds-gap-lg:20px;--cds-pad-md:12px;--cds-pad-lg:16px;--cds-pad-xl:24px;--cds-radius:10px;--cds-font-size-caption:12px;--cds-font-size-body:14px;--cds-font-size-heading:16px;--cds-font-size-title:28px;--cds-font-weight-medium:500;
 --font-anthropic-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-anthropic-serif:Georgia,"Times New Roman",serif}
-body{margin:0;background:#f7f6f2} #dash-root{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+body{margin:0;background:#f6f7fb linear-gradient(180deg,#ebe8ff 0,#f1f0fd 180px,#f6f7fb 460px) no-repeat} #dash-root{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
 html,:root{color-scheme:light !important}
 .dash-select{font:inherit;font-size:13px;line-height:1.3;padding:5px 28px 5px 10px;border:1px solid var(--color-border-line);border-radius:6px;color:var(--color-fg);background-color:var(--color-panel);-webkit-text-fill-color:var(--color-fg);appearance:none;-webkit-appearance:none;
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235e5d59' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:120px;max-width:100%;cursor:pointer}
-.dash-select:focus-visible{outline:2px solid var(--color-fg);outline-offset:1px}
-.dash-select,.dash-select:focus{color:#141413 !important;-webkit-text-fill-color:#141413 !important;background-color:#fff !important;color-scheme:light !important}
-.dash-select option,.dash-select optgroup{color:#141413 !important;-webkit-text-fill-color:#141413 !important;background-color:#fff !important}
-.dash-select option:checked{background-color:#dbe7f7 !important}
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236246ea' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:120px;max-width:100%;cursor:pointer}
+.dash-select:focus-visible{outline:2px solid var(--trk-accent);outline-offset:1px}
+.dash-select:hover{border-color:#b9aef7}
+.dash-select,.dash-select:focus{color:#101828 !important;-webkit-text-fill-color:#101828 !important;background-color:#fff !important;color-scheme:light !important}
+.dash-select option,.dash-select optgroup{color:#101828 !important;-webkit-text-fill-color:#101828 !important;background-color:#fff !important}
+.dash-select option:checked{background-color:#e7e2ff !important}
 </style><script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script>
 window.__draws={};
-window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
+window.dash={colors:['#6246ea','#0e9f8e','#e5484d'],
  draw(name,fn){ if(fn){ __draws[name]=fn; return; } const f=__draws[name]; if(!f) return;
   document.querySelectorAll('[data-draw="'+name+'"]').forEach(el=>{ if(el.closest('[hidden]')) return; try{f(el)}catch(e){console.error(name,e)} }); },
  onData(){}, data(){return {status:'ok',data:[]}} };
@@ -56,7 +57,7 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
   .trk-cols-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--cds-gap-sm) var(--cds-gap-md); margin-top: var(--cds-gap-sm); }
   .trk-cols-grid label { display: flex; flex-direction: column; gap: 4px; color: var(--color-fg-muted); }
   .trk-cols-grid select { width: 100%; }
-  .trk-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--cds-gap-md); }
+  .trk-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--cds-gap-md); }
   .trk-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); min-width: 0; }
   .trk-kpi-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0 0 4px; }
   .trk-kpi-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 1.55rem; line-height: 1.2; margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
@@ -93,12 +94,27 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
   .trk-table tr:last-child td { border-bottom: 0; }
   .trk-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 600; }
   .trk-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--cds-font-size-caption); border: 1px solid var(--color-border-line); }
-  .trk-badge-brusca { color: var(--color-bad); border-color: currentColor; }
   .trk-note { margin: var(--cds-gap-sm) 0 0; color: var(--color-warn); font-size: var(--cds-font-size-caption); }
   .trk-empty { margin: 0; color: var(--color-fg-muted); }
   .trk-howto summary { cursor: pointer; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
   .trk-howto ul { margin: var(--cds-gap-sm) 0 0; padding-left: 1.2em; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); display: grid; gap: 4px; }
   .trk[hidden], .trk [hidden] { display: none !important; }
+  /* Paleta */
+  .trk-title { letter-spacing: -0.01em; }
+  .trk-title::after { content: ''; display: block; width: 56px; height: 4px; border-radius: 4px; margin-top: 10px; background: linear-gradient(90deg, var(--trk-accent), var(--trk-teal)); }
+  .trk-drop { background: var(--trk-accent-soft); border-color: #b9aef7; }
+  .trk-drop.trk-over { border-color: var(--trk-accent); background: #ebe5ff; }
+  .trk-btn { background: var(--trk-accent); color: #fff; box-shadow: 0 6px 18px rgba(98,70,234,.28); }
+  .trk-btn:hover { opacity: 1; background: #5136d6; }
+  .trk-btn-ghost:hover, .trk-gmaps a:hover { border-color: var(--trk-accent); color: var(--trk-accent); }
+  .trk-card, .trk-kpi { box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 20px rgba(60,50,140,.05); }
+  .trk-kpi { border-top: 3px solid var(--trk-accent); }
+  #kpi-stops { border-top-color: var(--trk-teal); }
+  .trk-kpi-value { color: var(--color-fg); }
+  .trk-badge-normal { color: #0b7a6d; background: #e3f6f2; border-color: #bfe9e1; }
+  .trk-badge-brusca { color: #c9373c; background: #fdecec; border-color: #f6c5c7; }
+  .trk-maplink { color: var(--trk-accent); }
+  .trk-table tbody tr:hover td { background: #faf9ff; }
   @media print { .trk-drop, .trk-bar-actions, .trk-cols { display: none !important; } }
 </style>
 
@@ -878,6 +894,7 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
     const steps = [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10];
     const stp = steps.find((s) => span / s <= 6) || 10;
     const g0 = proj.invert([0, H]), g1 = proj.invert([W, 0]);
+    svg.append('rect').attr('width', W).attr('height', H).attr('rx', 8).style('fill', '#f8f8fd');
     svg.append('path').datum(d3.geoGraticule().extent([[g0[0] - stp, g0[1] - stp], [g1[0] + stp, g1[1] + stp]]).step([stp, stp])())
       .attr('d', path).attr('fill', 'none').style('stroke', 'var(--cds-chart-grid)').attr('stroke-width', 1);
 
@@ -1020,7 +1037,12 @@ window.dash={colors:['#2a78d6','#1baa7a','#eb6834'],
       .attr('x', (s) => x(s.start)).attr('width', (s) => Math.max(2, x(s.end) - x(s.start))).attr('y', 0).attr('height', ih)
       .style('fill', (s) => L.color(s.type)).style('opacity', 0.16);
 
-    g.append('path').datum(pts).attr('fill', 'none').style('stroke', dash.colors[0]).attr('stroke-width', 1.8).attr('stroke-linejoin', 'round')
+    const gid = 'trk-area-' + Math.random().toString(36).slice(2, 8);
+    const grad = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    grad.append('stop').attr('offset', '0%').style('stop-color', dash.colors[0]).style('stop-opacity', 0.22);
+    grad.append('stop').attr('offset', '100%').style('stop-color', dash.colors[0]).style('stop-opacity', 0);
+    g.append('path').datum(pts).attr('fill', `url(#${gid})`).attr('d', d3.area().x((p) => x(p.t)).y0(ih).y1((p) => y(p.v)));
+    g.append('path').datum(pts).attr('fill', 'none').style('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linejoin', 'round')
       .attr('d', d3.line().x((p) => x(p.t)).y((p) => y(p.v)));
 
     const xa = g.append('g').attr('transform', `translate(0,${ih})`).call(d3.axisBottom(x).tickValues(ticks).tickFormat(fmt).tickSizeOuter(0));
