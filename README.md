@@ -58,8 +58,7 @@ Igual que Mini Kids, se usa dentro del canvas de Claude, no abriendo el archivo 
 
 Página que lee un Excel (`.xlsx`) o CSV con los registros GPS de un camión y muestra dónde se paró, si cada parada fue normal o brusca, y el trayecto de origen a destino con su tiempo.
 
-- **Página en línea:** https://claude.ai/artifact/TDDtUJvujYPF5h17t8FNyy
-- **Archivos:** [`recorrido-camion/`](recorrido-camion/)
+- **Archivos:** [recorrido-camion](recorrido-camion/)
 
 ### Cómo funciona
 
