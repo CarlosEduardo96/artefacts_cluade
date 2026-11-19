@@ -58,8 +58,7 @@ Igual que Mini Kids, se usa dentro del canvas de Claude, no abriendo el archivo 
 
 Página que lee un Excel (`.xlsx`) o CSV con los registros GPS de un camión y muestra dónde se paró, si cada parada fue normal o brusca, y el trayecto de origen a destino con su tiempo.
 
-- **Página en línea:** https://claude.ai/artifact/TDDtUJvujYPF5h17t8FNyy
-- **Archivos:** [`recorrido-camion/`](recorrido-camion/)
+- **Archivos:** [recorrido-camion](recorrido-camion/)
 
 ### Cómo funciona
 
@@ -70,9 +69,9 @@ Página que lee un Excel (`.xlsx`) o CSV con los registros GPS de un camión y m
 | Sección | Qué muestra |
 |---|---|
 | Resumen | Camión, origen y destino con hora de salida y llegada, tiempo de origen a destino, tiempo en movimiento, distancia y velocidad máxima. |
-| Mapa | Trazo del recorrido con el origen, el destino y las paradas numeradas (verde normal, rojo brusca). Los nombres de ciudades no se enciman: si uno no cabe, se omite; el origen y el destino siempre se muestran. |
+| Mapa | Trazo del recorrido sobre el mapa de calles de OpenStreetMap, con el origen, el destino y las paradas numeradas (verde normal, rojo brusca). Al pasar el cursor o tocar una parada se ven su hora, duración y frenado. Si el mapa de calles no se puede cargar, el trayecto se dibuja sin fondo y los nombres de ciudades no se enciman. Debajo, el botón «Ver las paradas en Google Maps» abre una pestaña nueva con el origen, cada parada en orden y el destino, por sus coordenadas (con más de 9 paradas se parte en tramos, porque Google Maps admite pocos puntos por enlace). |
 | Velocidad | Km/h a lo largo del viaje, con franjas en las paradas. Las etiquetas se ajustan al ancho y no se cortan. |
-| Paradas | Tabla con hora, lugar, duración, frenado (m/s²) y tipo de cada parada. |
+| Paradas | Tabla con hora, lugar, duración, frenado (m/s²), tipo y un enlace para ver cada parada en Google Maps. |
 
 - Si el archivo trae varios camiones, se elige uno en una lista.
 - Las columnas se reconocen solas: latitud, longitud, fecha y hora (juntas o separadas), velocidad, camión o placa, ciudad y eventos. Si alguna no se detecta, se elige en «Columnas del archivo».
@@ -83,12 +82,12 @@ Página que lee un Excel (`.xlsx`) o CSV con los registros GPS de un camión y m
 - **Parada:** 3 km/h o menos durante al menos 1 minuto (5 km/h si la velocidad se calcula con el GPS). No cuentan la espera antes de salir ni al llegar.
 - **Parada brusca:** la velocidad cae 3 m/s² o más en los 2 minutos previos, o la columna de eventos marca un frenado brusco. Si los registros vienen cada más de 15 segundos, la página avisa que un frenado brusco puede verse como normal.
 - **Salida y llegada:** el primer momento en que el camión se mueve y el último en que se detiene.
-- El mapa no tiene fondo de calles: la página no descarga mapas de internet.
+- **Mapa de calles:** la página prueba cargar OpenStreetMap (con Leaflet). Funciona abierta desde GitHub Pages o como archivo en la computadora, con internet. En el artefacto de claude.ai el visor bloquea las imágenes de otros sitios, así que ahí el trayecto se dibuja sin fondo y las paradas se abren en Google Maps desde la tabla.
 
 ### Archivos
 
-- `recorrido-camion/index.html`: la página publicada como artefacto. Carga `d3` desde cdnjs, así que necesita internet.
-- `recorrido-camion/recorrido-del-camion-sin-internet.html`: la misma página con `d3` incluido; se abre con doble clic y funciona sin conexión.
+- `recorrido-camion/index.html`: la página. Carga `d3` y Leaflet desde cdnjs, así que necesita internet. Con GitHub Pages activado en este repositorio, queda en `https://carloseduardo96.github.io/artefacts_cluade/recorrido-camion/` con el mapa de calles.
+- `recorrido-camion/recorrido-del-camion-sin-internet.html`: la misma página con `d3` incluido; se abre con doble clic y funciona sin conexión (sin conexión, el mapa va sin fondo de calles).
 - `recorrido-camion/ejemplos/ruta.xlsx` y `ruta.csv`: datos inventados para probar un viaje de Ciudad de México a Querétaro con tres paradas. El `.xlsx` trae dos camiones y una columna de eventos (con una parada brusca); el `.csv` trae un solo camión, separado por «;» y con decimales con coma.
 
 A diferencia de los anteriores, esta página se abre directamente en el navegador.
