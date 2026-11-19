@@ -109,6 +109,12 @@ window.dash={colors:['#6246ea','#0e9f8e','#e5484d'],
   .trk-btn { background: var(--trk-accent); color: #fff; box-shadow: 0 6px 18px rgba(98,70,234,.28); }
   .trk-btn:hover { opacity: 1; background: #5136d6; }
   .trk-btn-ghost:hover, .trk-gmaps a:hover { border-color: var(--trk-accent); color: var(--trk-accent); }
+  .trk-gm-all { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: var(--cds-radius); padding: 8px 14px; font: inherit; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: #fff; background: var(--trk-accent); cursor: pointer; box-shadow: 0 4px 12px rgba(98,70,234,.25); }
+  .trk-gm-all:hover { background: #5136d6; }
+  .trk-gm-all:focus-visible { outline: 2px solid var(--trk-accent); outline-offset: 2px; }
+  .trk-gmaps a.trk-gm-kml { border-style: dashed; }
+  .trk-gm-msg { flex-basis: 100%; margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-warn); }
+  .trk-gm-msg:empty { display: none; }
   .trk-card, .trk-kpi { box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 20px rgba(60,50,140,.05); }
   .trk-kpi { border-top: 3px solid var(--trk-accent); }
   #kpi-stops { border-top-color: var(--trk-teal); }
@@ -181,6 +187,7 @@ window.dash={colors:['#6246ea','#0e9f8e','#e5484d'],
       </ul>
       <div class="trk-chart trk-map" id="trk-map" data-draw="trk-map"></div>
       <div class="trk-gmaps" data-draw="trk-gmaps"></div>
+      <div class="trk-gmaps" data-draw="trk-gmaps-extra"></div>
       <p class="trk-mapnote" id="trk-mapnote" hidden>No se pudo cargar el mapa de calles, así que el trayecto se dibuja sin fondo: el visor de artefactos de claude.ai no lo permite, y fuera de él hace falta internet. Cada parada tiene en la tabla un enlace para verla en Google Maps. Abierta desde GitHub Pages o como archivo en tu computadora, con internet, la página muestra el mapa de OpenStreetMap.</p>
     </section>
 
@@ -623,7 +630,7 @@ window.dash={colors:['#6246ea','#0e9f8e','#e5484d'],
   const S = window.TRK = { name: null, table: null, map: null, truck: null, res: null, error: '' };
   const DRAWS = ['trk-error', 'trk-fname', 'trk-rows', 'trk-truck', 'trk-colsel', 's-truck', 's-origin', 's-dest', 's-dur', 's-stops', 's-harsh',
     'k-truck', 'k-origin', 'k-dep', 'k-dest', 'k-arr', 'k-dur', 'k-moving', 'k-dist', 'k-vmax', 'k-stops', 'k-normal', 'k-harsh',
-    'trk-map', 'trk-gmaps', 'trk-speed', 'trk-stops-rows', 'trk-interval', 'c-stopkmh', 'c-stopmin', 'c-window', 'c-harsh', 'c-harshkmh'];
+    'trk-map', 'trk-gmaps', 'trk-gmaps-extra', 'trk-speed', 'trk-stops-rows', 'trk-interval', 'c-stopkmh', 'c-stopmin', 'c-window', 'c-harsh', 'c-harshkmh'];
 
   function show(sel, on) { document.querySelectorAll(sel).forEach((el) => { el.hidden = !on; }); }
 
@@ -869,6 +876,66 @@ window.dash={colors:['#6246ea','#0e9f8e','#e5484d'],
     note.textContent = 'Se abre en una pestaña nueva con el origen, ' + (r.stops.length ? 'cada parada en orden' : 'el trayecto') + ' y el destino, usando sus coordenadas. Google Maps traza su propia ruta entre esos puntos, que puede no ser el camino exacto del camión.' +
       (links.length > 1 ? ' Google Maps admite pocos puntos por enlace, por eso va en tramos.' : '');
     el.appendChild(note);
+  });
+
+  /* ---------- Abrir todos los tramos y KML para Google My Maps ---------- */
+  const xmlEsc = (t) => String(t).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
+  const kmlColor = (hex) => { const h = hex.replace('#', ''); return 'ff' + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2); };
+  function buildKml(r) {
+    const step = Math.max(1, Math.ceil(r.pts.length / 1800));
+    const line = r.pts.filter((p, i) => i % step === 0 || i === r.pts.length - 1).map((p) => p.lon.toFixed(6) + ',' + p.lat.toFixed(6) + ',0').join(' ');
+    const pm = (name, desc, style, p) => '<Placemark><name>' + xmlEsc(name) + '</name><description>' + xmlEsc(desc) + '</description><styleUrl>#' + style +
+      '</styleUrl><Point><coordinates>' + p.lon.toFixed(6) + ',' + p.lat.toFixed(6) + ',0</coordinates></Point></Placemark>';
+    const o = r.pts[0], d = r.pts[r.pts.length - 1];
+    const title = 'Recorrido ' + (r.truck ? r.truck + ' ' : '') + r.origin + ' – ' + r.dest;
+    const ic = (id, color) => '<Style id="' + id + '"><IconStyle><color>' + kmlColor(color) + '</color><scale>1.1</scale><Icon><href>https://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href></Icon></IconStyle></Style>';
+    return '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>' + xmlEsc(title) + '</name>' +
+      '<Style id="ruta"><LineStyle><color>' + kmlColor('#6246ea') + '</color><width>4</width></LineStyle></Style>' +
+      ic('origen', '#101828') + ic('destino', '#101828') + ic('normal', '#0e9f8e') + ic('brusca', '#e5484d') +
+      '<Placemark><name>Trayecto</name><description>' + xmlEsc(L.km(r.dist) + ' · ' + L.dur(r.travel)) + '</description><styleUrl>#ruta</styleUrl><LineString><tessellate>1</tessellate><coordinates>' + line + '</coordinates></LineString></Placemark>' +
+      pm('Origen: ' + r.origin, 'Salida ' + L.fmtFull(r.dep), 'origen', o) +
+      r.stops.map((s) => pm('Parada ' + s.n + ' (' + s.type + ')', (s.place ? s.place + ' · ' : '') + L.when(r, s.start) + ' a ' + L.when(r, s.end) + ' · ' + L.dur(s.dur * 1000) +
+        (s.decel != null ? ' · frenado ' + L.f1(s.decel) + ' m/s²' : ''), s.type, s)).join('') +
+      pm('Destino: ' + r.dest, 'Llegada ' + L.fmtFull(r.arr), 'destino', d) +
+      '</Document></kml>';
+  }
+  let framed = true; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+
+  dash.draw('trk-gmaps-extra', (el) => {
+    el.replaceChildren();
+    const r = R(); if (!r) return;
+    const links = gmapsLinks(r);
+    const msg = document.createElement('p'); msg.className = 'trk-gm-msg'; msg.setAttribute('role', 'status');
+    if (links.length > 1) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'trk-gm-all';
+      b.textContent = 'Abrir todos los tramos en Google Maps (' + links.length + ') ↗';
+      b.onclick = () => {
+        let blocked = 0;
+        for (const lk of links) {
+          let w = null; try { w = window.open(lk.url, '_blank'); } catch (e) { w = null; }
+          if (w) { try { w.opener = null; } catch (e) {} } else blocked++;
+        }
+        msg.textContent = blocked
+          ? 'El navegador bloqueó ' + blocked + ' de ' + links.length + ' pestañas. Permite las ventanas emergentes de esta página y vuelve a darle clic, o abre cada tramo con su botón.'
+          : '';
+      };
+      el.appendChild(b);
+    }
+    if (!framed) {
+      const a = document.createElement('a'); a.className = 'trk-gm-kml';
+      const blob = new Blob([buildKml(r)], { type: 'application/vnd.google-earth.kml+xml' });
+      if (el._kmlUrl) URL.revokeObjectURL(el._kmlUrl);
+      el._kmlUrl = a.href = URL.createObjectURL(blob);
+      a.download = ('recorrido-' + (r.truck || 'camion')).replace(/[^\w.-]+/g, '_') + '.kml';
+      a.textContent = 'Descargar recorrido completo para Google My Maps (.kml)';
+      el.appendChild(a);
+      const mm = document.createElement('a'); mm.href = 'https://www.google.com/maps/d/'; mm.target = '_blank'; mm.rel = 'noopener noreferrer';
+      mm.textContent = 'Abrir Google My Maps ↗'; el.appendChild(mm);
+      const hint = document.createElement('p'); hint.className = 'trk-gmaps-note';
+      hint.textContent = 'El .kml trae el trazo GPS real completo, con el origen, todas las paradas y el destino, en un solo mapa. En Google My Maps: Crear un mapa nuevo → Importar → elige el archivo.';
+      el.appendChild(hint);
+    }
+    el.appendChild(msg);
   });
 
   /* ---------- Mapa ---------- */
