@@ -15,6 +15,7 @@ Juego educativo en español para niños de kinder, hecho como un canvas de dise�
 | ¿Quién hace? | Se escucha un sonido ("Muuu") y el niño elige qué animal lo hace. |
 | ¿Dónde vive? | El niño elige si el animal vive en la granja, la selva, la casa o el agua. |
 | Números | Sumas, restas y multiplicaciones pequeñas, con animalitos para contar. |
+| ¿Qué color? | Se escucha "¿Cuál es el color rojo?" y el niño toca la mancha de ese color. Al acertar oye "¡Muy bien! Este es el color rojo". |
 
 Las preguntas se leen en voz alta (síntesis de voz del navegador, `es-MX`). Cada acierto gana una estrella.
 
