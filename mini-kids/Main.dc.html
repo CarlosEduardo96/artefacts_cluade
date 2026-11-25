@@ -221,19 +221,39 @@ class Component extends DCLogic {
     super(props);
     this.state = { screen: 'menu', mode: 'find', round: 0, stars: 0, q: null, feedback: null, wrong: [], picked: null };
     this.timer = null;
+    this.speakTimer = null;
+    this.utt = null;
+    this.token = 0;
   }
-  componentWillUnmount() { clearTimeout(this.timer); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} }
+  componentWillUnmount() { this.token++; clearTimeout(this.timer); clearTimeout(this.speakTimer); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} }
   total() { return Number(this.props.rondas ?? 5) || 5; }
-  speak(text) {
-    if ((this.props.voz ?? true) === false) return;
+  speak(text, onEnd) {
+    let done = false;
+    const finish = () => { if (done) return; done = true; if (onEnd) onEnd(); };
+    if ((this.props.voz ?? true) === false) { finish(); return; }
     try {
       const s = window.speechSynthesis;
-      if (!s) return;
-      s.cancel();
+      if (!s || typeof SpeechSynthesisUtterance === 'undefined') { finish(); return; }
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'es-MX'; u.rate = 0.9; u.pitch = 1.15;
-      s.speak(u);
-    } catch (e) {}
+      u.onend = () => { if (this.utt === u) this.utt = null; finish(); };
+      u.onerror = () => { if (this.utt === u) this.utt = null; finish(); };
+      // Keep a reference so the browser does not drop the sentence halfway.
+      this.utt = u;
+      clearTimeout(this.speakTimer);
+      if (s.speaking || s.pending) {
+        s.cancel();
+        // Some browsers drop an utterance queued right after cancel(); wait a moment.
+        this.speakTimer = setTimeout(() => { try { s.resume(); s.speak(u); } catch (e) { finish(); } }, 120);
+      } else {
+        s.resume();
+        s.speak(u);
+      }
+    } catch (e) { finish(); }
+  }
+  stopVoice() {
+    clearTimeout(this.speakTimer);
+    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
   }
   makeMath(prev) {
     const set = this.props.operaciones ?? 'Todas';
@@ -268,6 +288,7 @@ class Component extends DCLogic {
     else this.speak('¿Dónde vive ' + t.art + ' ' + t.nom + '?');
   }
   start(mode) {
+    this.token++;
     clearTimeout(this.timer);
     const q = this.makeQ(mode, null);
     this.setState({ screen: 'play', mode, round: 0, stars: 0, q, feedback: null, wrong: [], picked: null });
@@ -287,14 +308,28 @@ class Component extends DCLogic {
       return;
     }
     this.setState({ feedback: 'ok', picked: id, stars: st.stars + 1 });
-    if (st.mode === 'math') this.speak('¡Muy bien! ' + st.q.a + ' ' + WORD[st.q.op] + ' ' + st.q.b + ' es ' + st.q.ans);
-    else if (st.mode === 'find') this.speak('¡Muy bien! Es ' + t.art + ' ' + t.nom);
-    else if (st.mode === 'sound') this.speak('¡Muy bien! ' + cap(t.art) + ' ' + t.nom + ' dice ' + t.sound);
-    else this.speak('¡Sí! ' + cap(t.art) + ' ' + t.nom + ' vive ' + HOMES.find((h) => h.id === t.home).en);
+    let msg;
+    if (st.mode === 'math') msg = '¡Muy bien! ' + st.q.a + ' ' + WORD[st.q.op] + ' ' + st.q.b + ' es ' + st.q.ans;
+    else if (st.mode === 'find') msg = '¡Muy bien! Es ' + t.art + ' ' + t.nom;
+    else if (st.mode === 'sound') msg = '¡Muy bien! ' + cap(t.art) + ' ' + t.nom + ' dice ' + t.sound;
+    else msg = '¡Sí! ' + cap(t.art) + ' ' + t.nom + ' vive ' + HOMES.find((h) => h.id === t.home).en;
+    // Move on only after the praise has finished playing (never cut it off).
+    const token = ++this.token;
+    const startedAt = Date.now();
+    let moved = false;
+    const goNext = () => {
+      if (moved || token !== this.token) return;
+      moved = true;
+      clearTimeout(this.timer);
+      const wait = Math.max(0, 1400 - (Date.now() - startedAt)) + 500;
+      this.timer = setTimeout(() => { if (token === this.token) this.next(); }, wait);
+    };
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.next(), 2200);
+    this.timer = setTimeout(goNext, 8000);
+    this.speak(msg, goNext);
   }
   next() {
+    this.token++;
     const st = this.state;
     if (st.round + 1 >= this.total()) {
       this.setState({ screen: 'done', feedback: null });
@@ -368,7 +403,7 @@ class Component extends DCLogic {
       startSound: () => this.start('sound'),
       startHome: () => this.start('home'),
       again: () => this.start(st.mode),
-      goMenu: () => { clearTimeout(this.timer); this.setState({ screen: 'menu', feedback: null }); },
+      goMenu: () => { this.token++; clearTimeout(this.timer); this.stopVoice(); this.setState({ screen: 'menu', feedback: null }); },
       repeat: () => { if (q) this.sayPrompt(st.mode, q); },
       roundLabel: 'Ronda ' + (st.round + 1) + ' de ' + total,
       promptText,
